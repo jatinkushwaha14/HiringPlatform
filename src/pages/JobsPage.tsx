@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
-import { fetchJobs } from '../store/slices/jobsSlice';
+import { fetchJobs, createJob, updateJob } from '../store/slices/jobsSlice';
+import JobForm from '../components/Jobs/JobForm';
+import type { Job } from '../types/index.ts';
+import './JobsPage.css';
 
 const JobsPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { jobs, loading, error } = useAppSelector((state) => state.jobs);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [showForm, setShowForm] = useState(false);
+  const [editingJob, setEditingJob] = useState<Job | undefined>();
+
 
   React.useEffect(() => {
     dispatch(fetchJobs());
@@ -19,77 +25,149 @@ const JobsPage: React.FC = () => {
     return matchesSearch && matchesStatus;
   });
 
+  const handleCreateJob = () => {
+    setEditingJob(undefined);
+    setShowForm(true);
+  };
+  const handleEditJob = (job: Job) => {
+    setEditingJob(job);
+    setShowForm(true);
+  };
+
+  const handleSubmitJob = async (jobData: Omit<Job, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (editingJob) {
+      await dispatch(updateJob({ id: editingJob.id, updates: jobData }));
+    } else {
+      await dispatch(createJob(jobData));
+    }
+    setShowForm(false);
+    setEditingJob(undefined);
+  };
+
+  const handleArchiveJob = async (job: Job) => {
+    await dispatch(updateJob({ 
+      id: job.id, 
+      updates: { status: job.status === 'active' ? 'archived' : 'active' } 
+    }));
+  };
   if (loading) return <div>Loading jobs...</div>;
   if (error) return <div>Error: {error}</div>;
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h1>Jobs Board</h1>
+    <div className="jobs-page">
+      <div className="jobs-header">
+        <h1 className="jobs-title">Jobs Board</h1>
+        <p className="jobs-subtitle">
+          Manage your job postings and track applications
+        </p>
+      </div>
       
-      {/* Filters */}
-      <div style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
-        <input
-          type="text"
-          placeholder="Search jobs..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-        />
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          style={{ padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+      <div className="jobs-controls">
+        <div className="jobs-filters">
+          <input
+            type="text"
+            placeholder="Search jobs by title or tags..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="jobs-search"
+          />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="jobs-filter"
+          >
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
+        <button
+          onClick={handleCreateJob}
+          className="create-job-btn"
         >
-          <option value="all">All Status</option>
-          <option value="active">Active</option>
-          <option value="archived">Archived</option>
-        </select>
+          + Create Job
+        </button>
       </div>
 
-      {/* Jobs List */}
-      <div style={{ display: 'grid', gap: '15px' }}>
-        {filteredJobs.map((job) => (
-          <div key={job.id} style={{ 
-            border: '1px solid #ddd', 
-            padding: '15px', 
-            borderRadius: '8px',
-            backgroundColor: job.status === 'archived' ? '#f5f5f5' : 'white'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-              <div>
-                <h3 style={{ margin: '0 0 8px 0' }}>{job.title}</h3>
-                <p style={{ margin: '0 0 8px 0', color: '#666' }}>#{job.slug}</p>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {job.tags.map((tag, index) => (
-                    <span key={index} style={{ 
-                      backgroundColor: '#e3f2fd', 
-                      padding: '4px 8px', 
-                      borderRadius: '12px', 
-                      fontSize: '12px' 
-                    }}>
-                      {tag}
+      <div className="jobs-list">
+        {filteredJobs.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon">📋</div>
+            <h3 className="empty-title">No jobs found</h3>
+            <p className="empty-message">
+              {search || statusFilter !== 'all' 
+                ? 'Try adjusting your search or filters' 
+                : 'Create your first job posting to get started'
+              }
+            </p>
+          </div>
+        ) : (
+          filteredJobs.map((job) => (
+            <div key={job.id} className={`job-card ${job.status === 'archived' ? 'archived' : ''}`}>
+              <div className="job-content">
+                <div className="job-info">
+                  <div className="job-header">
+                    <h3 className="job-title">{job.title}</h3>
+                    <span className={`job-status ${job.status}`}>
+                      {job.status}
                     </span>
-                  ))}
+                  </div>
+                  
+                  <p className="job-slug">
+                    #{job.slug}
+                  </p>
+                  
+                  <div className="job-tags">
+                    {job.tags.map((tag, index) => (
+                      <span key={index} className="job-tag">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="job-actions">
+                  <div className="job-buttons">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditJob(job);
+                      }}
+                      className="job-btn"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleArchiveJob(job);
+                      }}
+                      className={`job-btn ${job.status === 'active' ? 'archive' : 'unarchive'}`}
+                    >
+                      {job.status === 'active' ? 'Archive' : 'Unarchive'}
+                    </button>
+                  </div>
+                  
+                  <div className="job-order">
+                    Order: {job.order}
+                  </div>
                 </div>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <span style={{ 
-                  padding: '4px 8px', 
-                  borderRadius: '12px', 
-                  fontSize: '12px',
-                  backgroundColor: job.status === 'active' ? '#4caf50' : '#ff9800',
-                  color: 'white'
-                }}>
-                  {job.status}
-                </span>
-                <p style={{ margin: '8px 0 0 0', fontSize: '12px', color: '#666' }}>
-                  Order: {job.order}
-                </p>
-              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
+
+      {showForm && (
+        <JobForm
+          job={editingJob}
+          onSubmit={handleSubmitJob}
+          onCancel={() => {
+            setShowForm(false);
+            setEditingJob(undefined);
+          }}
+        />
+      )}
     </div>
   );
 };

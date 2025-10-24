@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { Candidate } from '../../types';
+import type { Candidate } from '../../types';
 
 interface CandidatesState {
   candidates: Candidate[];

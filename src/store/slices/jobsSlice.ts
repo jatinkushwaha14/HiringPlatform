@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { Job } from '../../types';
+import type { Job } from '../../types';
 
 interface JobsState {
   jobs: Job[];

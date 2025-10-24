@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import type { Job } from '../../types';
+import type { Job } from '../../types/index.ts';
+import { db } from '../../services/database';
 
 interface JobsState {
   jobs: Job[];
@@ -16,8 +17,8 @@ const initialState: JobsState = {
 export const fetchJobs = createAsyncThunk(
   'jobs/fetchJobs',
   async () => {
-    // Return empty array for now
-    return [];
+    const jobs = await db.jobs.orderBy('order').toArray();
+    return jobs;
   }
 );
 

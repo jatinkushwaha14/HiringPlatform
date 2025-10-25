@@ -300,10 +300,23 @@
     transition: all 0.2s ease;
   }
   
-  .kanban-btn:hover {
-    background-color: #f8f9fa;
-    border-color: #007bff;
-  }
+.kanban-btn:hover {
+  background-color: #f8f9fa;
+  border-color: #007bff;
+}
+
+.kanban-card.dragging {
+  opacity: 0.5;
+  transform: rotate(5deg);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+  z-index: 1000;
+}
+
+.kanban-column.drop-target {
+  background-color: #e3f2fd;
+  border: 2px dashed #1976d2;
+  border-radius: 8px;
+}
   
 .loading, .error {
   text-align: center;

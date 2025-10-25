@@ -116,9 +116,16 @@
     cursor: pointer;
   }
   
-  .job-card:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  }
+.job-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.job-card.dragging {
+  opacity: 0.5;
+  transform: rotate(5deg);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+  z-index: 1000;
+}
   
   .job-card.archived {
     background-color: #f8f9fa;

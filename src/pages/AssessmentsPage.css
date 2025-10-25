@@ -1,0 +1,380 @@
+.assessments-page {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.assessments-header {
+  margin-bottom: 32px;
+}
+
+.assessments-header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 8px 0;
+}
+
+.assessments-header p {
+  font-size: 16px;
+  color: #666;
+  margin: 0;
+}
+
+.assessments-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  padding: 24px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.job-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.job-selector label {
+  font-weight: 600;
+  color: #333;
+}
+
+.job-select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  min-width: 200px;
+  background: white;
+}
+
+.job-select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.assessment-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.create-assessment-btn {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.create-assessment-btn:hover {
+  background: #0056b3;
+}
+
+.view-all-btn {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.view-all-btn:hover {
+  background: #5a6268;
+}
+
+.assessments-content {
+  margin-top: 24px;
+}
+
+.assessments-list h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 16px 0;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.empty-state p {
+  color: #666;
+  margin: 8px 0;
+}
+
+.assessment-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.assessment-card {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 20px;
+  transition: box-shadow 0.2s;
+}
+
+.assessment-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.assessment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.assessment-header h4 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.assessment-job {
+  font-size: 12px;
+  color: #007bff;
+  background: #e3f2fd;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin: 4px 0;
+  font-weight: 500;
+}
+
+.assessment-date {
+  font-size: 12px;
+  color: #666;
+  background: #f8f9fa;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.assessment-stats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.assessment-stats span {
+  font-size: 14px;
+  color: #666;
+  background: #e9ecef;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.assessment-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.edit-btn, .preview-btn {
+  padding: 6px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  color: #333;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.edit-btn:hover {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.preview-btn:hover {
+  background: #28a745;
+  color: white;
+  border-color: #28a745;
+}
+
+.delete-btn {
+  padding: 6px 12px;
+  border: 1px solid #dc3545;
+  border-radius: 4px;
+  background: white;
+  color: #dc3545;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.delete-btn:hover {
+  background: #dc3545;
+  color: white;
+  border-color: #dc3545;
+}
+
+.assessment-builder-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.assessment-builder {
+  background: white;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 1200px;
+  height: 80%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.builder-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.builder-header h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #666;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  color: #333;
+}
+
+.builder-content {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.builder-content p {
+  color: #666;
+  margin: 8px 0;
+}
+
+.builder-content ul {
+  margin: 16px 0;
+  padding-left: 20px;
+}
+
+.builder-content li {
+  color: #666;
+  margin: 4px 0;
+}
+
+.loading, .error {
+  text-align: center;
+  padding: 48px 24px;
+  font-size: 16px;
+}
+
+.loading {
+  color: #666;
+}
+
+.error {
+  color: #dc3545;
+}
+
+/* Preview Modal Styles */
+.preview-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.preview-modal {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 800px;
+  height: 80%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.preview-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e9ecef;
+  background: #f8f9fa;
+}
+
+.preview-modal-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.preview-close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #666;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  border-radius: 4px;
+}
+
+.preview-close-btn:hover {
+  color: #333;
+  background: #e9ecef;
+}
+
+.preview-modal-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}

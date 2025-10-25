@@ -1,9 +1,105 @@
 import React, { useState, useEffect } from 'react';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragOverlay, useDroppable } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { createPortal } from 'react-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
-import { fetchCandidates } from '../store/slices/candidatesSlice';
+import { fetchCandidates, updateCandidateStage } from '../store/slices/candidatesSlice';
 import { forceSeedDatabase } from '../services/seedData';
 import type { Candidate } from '../types';
 import './CandidatesPage.css';
+
+// Sortable Candidate Card Component
+const SortableCandidateCard: React.FC<{ 
+  candidate: Candidate; 
+  onViewProfile: (candidate: Candidate) => void; 
+  onAddNote: (candidate: Candidate) => void;
+}> = ({ candidate, onViewProfile, onAddNote }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: candidate.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="kanban-card"
+      {...attributes}
+      {...listeners}
+    >
+      <h4 className="kanban-card-name">{candidate.name}</h4>
+      <p className="kanban-card-email">{candidate.email}</p>
+      <div className="kanban-card-actions">
+        <button 
+          className="kanban-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            onViewProfile(candidate);
+          }}
+        >
+          View
+        </button>
+        <button 
+          className="kanban-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddNote(candidate);
+          }}
+        >
+          Note
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Droppable Kanban Column Component
+const DroppableKanbanColumn: React.FC<{ 
+  stage: string; 
+  candidates: Candidate[]; 
+  onViewProfile: (candidate: Candidate) => void; 
+  onAddNote: (candidate: Candidate) => void;
+}> = ({ stage, candidates, onViewProfile, onAddNote }) => {
+  const { setNodeRef, isOver } = useDroppable({
+    id: stage,
+  });
+
+  return (
+    <div 
+      ref={setNodeRef}
+      className={`kanban-column ${isOver ? 'drop-target' : ''}`}
+    >
+      <div className="kanban-header">
+        <h3 className="kanban-title">{stage.charAt(0).toUpperCase() + stage.slice(1)}</h3>
+        <span className="kanban-count">{candidates.length}</span>
+      </div>
+      <SortableContext items={candidates.map(c => c.id)} strategy={verticalListSortingStrategy}>
+        <div className="kanban-cards">
+          {candidates.map((candidate) => (
+            <SortableCandidateCard
+              key={candidate.id}
+              candidate={candidate}
+              onViewProfile={onViewProfile}
+              onAddNote={onAddNote}
+            />
+          ))}
+        </div>
+      </SortableContext>
+    </div>
+  );
+};
 
 const CandidatesPage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -15,6 +111,18 @@ const CandidatesPage: React.FC = () => {
   const [showProfile, setShowProfile] = useState(false);
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [noteText, setNoteText] = useState('');
+  const [activeId, setActiveId] = useState<string | null>(null);
+  
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     dispatch(fetchCandidates({}));
@@ -48,6 +156,55 @@ const CandidatesPage: React.FC = () => {
       setNoteText('');
       setShowNoteModal(false);
       setSelectedCandidate(null);
+    }
+  };
+
+  const handleDragStart = (event: any) => {
+    setActiveId(event.active.id);
+  };
+
+  const handleDragEnd = async (event: any) => {
+    const { active, over } = event;
+    setActiveId(null);
+
+    if (active.id !== over.id) {
+      const candidate = candidates.find(c => c.id === active.id);
+      
+      // Find the stage by looking at which column the drop happened in
+      let newStage = '';
+      if (over.id === 'applied' || candidatesByStage.applied.some(c => c.id === over.id)) {
+        newStage = 'applied';
+      } else if (over.id === 'screen' || candidatesByStage.screen.some(c => c.id === over.id)) {
+        newStage = 'screen';
+      } else if (over.id === 'tech' || candidatesByStage.tech.some(c => c.id === over.id)) {
+        newStage = 'tech';
+      } else if (over.id === 'offer' || candidatesByStage.offer.some(c => c.id === over.id)) {
+        newStage = 'offer';
+      } else if (over.id === 'hired' || candidatesByStage.hired.some(c => c.id === over.id)) {
+        newStage = 'hired';
+      } else if (over.id === 'rejected' || candidatesByStage.rejected.some(c => c.id === over.id)) {
+        newStage = 'rejected';
+      }
+
+      if (candidate && newStage && newStage !== candidate.stage) {
+        try {
+          // Simulate 10% failure rate as per assignment requirements
+          if (Math.random() < 0.1) {
+            throw new Error('Simulated API failure');
+          }
+          
+          await dispatch(updateCandidateStage({ 
+            id: candidate.id, 
+            stage: newStage as 'applied' | 'screen' | 'tech' | 'offer' | 'hired' | 'rejected'
+          }));
+          
+          console.log(`Moved ${candidate.name} from ${candidate.stage} to ${newStage} stage`);
+        } catch (error) {
+          console.error('Failed to update candidate stage:', error);
+          // Rollback - refresh candidates to get original state
+          dispatch(fetchCandidates({}));
+        }
+      }
     }
   };
 
@@ -181,38 +338,39 @@ const CandidatesPage: React.FC = () => {
           )}
         </div>
       ) : (
-        <div className="kanban-board">
-          {Object.entries(candidatesByStage).map(([stage, stageCandidates]) => (
-            <div key={stage} className="kanban-column">
-              <div className="kanban-header">
-                <h3 className="kanban-title">{stage.charAt(0).toUpperCase() + stage.slice(1)}</h3>
-                <span className="kanban-count">{stageCandidates.length}</span>
-              </div>
-              <div className="kanban-cards">
-                {stageCandidates.map((candidate) => (
-                  <div key={candidate.id} className="kanban-card">
-                    <h4 className="kanban-card-name">{candidate.name}</h4>
-                    <p className="kanban-card-email">{candidate.email}</p>
-                    <div className="kanban-card-actions">
-                      <button 
-                        className="kanban-btn"
-                        onClick={() => handleViewProfile(candidate)}
-                      >
-                        View
-                      </button>
-                      <button 
-                        className="kanban-btn"
-                        onClick={() => handleAddNote(candidate)}
-                      >
-                        Note
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
+          <div className="kanban-board">
+            {Object.entries(candidatesByStage).map(([stage, stageCandidates]) => (
+              <DroppableKanbanColumn
+                key={stage}
+                stage={stage}
+                candidates={stageCandidates}
+                onViewProfile={handleViewProfile}
+                onAddNote={handleAddNote}
+              />
+            ))}
+          </div>
+          {createPortal(
+            <DragOverlay>
+              {activeId ? (
+                <div className="kanban-card dragging">
+                  <h4 className="kanban-card-name">
+                    {candidates.find(c => c.id === activeId)?.name}
+                  </h4>
+                  <p className="kanban-card-email">
+                    {candidates.find(c => c.id === activeId)?.email}
+                  </p>
+                </div>
+              ) : null}
+            </DragOverlay>,
+            document.body
+          )}
+        </DndContext>
       )}
 
       {/* Candidate Profile Modal */}

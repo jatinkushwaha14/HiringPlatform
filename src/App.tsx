@@ -3,10 +3,11 @@ import { Provider } from 'react-redux';
 import { store } from './store';
 import JobsPage from './pages/JobsPage';
 import CandidatesPage from './pages/CandidatesPage';
+import AssessmentsPage from './pages/AssessmentsPage';
 import './App.css';
 
 function App() {
-  const [currentPage, setCurrentPage] = React.useState<'jobs' | 'candidates'>('jobs');
+  const [currentPage, setCurrentPage] = React.useState<'jobs' | 'candidates' | 'assessments'>('jobs');
   return (
     <Provider store={store}>
       <div className="App">
@@ -45,10 +46,25 @@ function App() {
           >
             Candidates
           </button>
+          <button
+            onClick={() => setCurrentPage('assessments')}
+            style={{
+              padding: '8px 16px',
+              border: 'none',
+              backgroundColor: currentPage === 'assessments' ? '#007bff' : 'transparent',
+              color: currentPage === 'assessments' ? 'white' : '#495057',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontWeight: '500'
+            }}
+          >
+            Assessments
+          </button>
         </nav>
         
         {currentPage === 'jobs' && <JobsPage />}
         {currentPage === 'candidates' && <CandidatesPage />}
+        {currentPage === 'assessments' && <AssessmentsPage />}
       </div>
     </Provider>
   );

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { createPortal } from 'react-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { fetchJobs, createJob, updateJob } from '../store/slices/jobsSlice';
 import JobForm from '../components/Jobs/JobForm';
@@ -94,6 +95,18 @@ const JobsPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [showForm, setShowForm] = useState(false);
   const [editingJob, setEditingJob] = useState<Job | undefined>();
+  const [activeId, setActiveId] = useState<string | null>(null);
+  
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
 
   React.useEffect(() => {
@@ -131,6 +144,52 @@ const JobsPage: React.FC = () => {
       id: job.id, 
       updates: { status: job.status === 'active' ? 'archived' : 'active' } 
     }));
+  };
+
+  const handleDragStart = (event: any) => {
+    setActiveId(event.active.id);
+  };
+
+  const handleDragEnd = async (event: any) => {
+    const { active, over } = event;
+    setActiveId(null);
+
+    if (active.id !== over.id) {
+      const oldIndex = filteredJobs.findIndex((job) => job.id === active.id);
+      const newIndex = filteredJobs.findIndex((job) => job.id === over.id);
+      
+      const reorderedJobs = arrayMove(filteredJobs, oldIndex, newIndex);
+      
+      // Update order values
+      const updatedJobs = reorderedJobs.map((job, index) => ({
+        ...job,
+        order: index + 1
+      }));
+
+      // Optimistic update - update local state immediately
+      // In a real app, you'd dispatch an action to update the Redux store
+      console.log('Reordering jobs:', updatedJobs);
+      
+      // Simulate API call with potential failure
+      try {
+        // Simulate 10% failure rate as per assignment requirements
+        if (Math.random() < 0.1) {
+          throw new Error('Simulated API failure');
+        }
+        
+        // Update each job's order in the database
+        for (const job of updatedJobs) {
+          await dispatch(updateJob({ 
+            id: job.id, 
+            updates: { order: job.order } 
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to reorder jobs:', error);
+        // Rollback - refresh the jobs to get the original order
+        dispatch(fetchJobs());
+      }
+    }
   };
   if (loading) return <div>Loading jobs...</div>;
   if (error) return <div>Error: {error}</div>;
@@ -171,74 +230,56 @@ const JobsPage: React.FC = () => {
         </button>
       </div>
 
-      <div className="jobs-list">
-        {filteredJobs.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon">📋</div>
-            <h3 className="empty-title">No jobs found</h3>
-            <p className="empty-message">
-              {search || statusFilter !== 'all' 
-                ? 'Try adjusting your search or filters' 
-                : 'Create your first job posting to get started'
-              }
-            </p>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={filteredJobs.map(job => job.id)} strategy={verticalListSortingStrategy}>
+          <div className="jobs-list">
+            {filteredJobs.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">📋</div>
+                <h3 className="empty-title">No jobs found</h3>
+                <p className="empty-message">
+                  {search || statusFilter !== 'all' 
+                    ? 'Try adjusting your search or filters' 
+                    : 'Create your first job posting to get started'
+                  }
+                </p>
+              </div>
+            ) : (
+              filteredJobs.map((job) => (
+                <SortableJobCard
+                  key={job.id}
+                  job={job}
+                  onEdit={handleEditJob}
+                  onArchive={handleArchiveJob}
+                />
+              ))
+            )}
           </div>
-        ) : (
-          filteredJobs.map((job) => (
-            <div key={job.id} className={`job-card ${job.status === 'archived' ? 'archived' : ''}`}>
-              <div className="job-content">
-                <div className="job-info">
-                  <div className="job-header">
-                    <h3 className="job-title">{job.title}</h3>
-                    <span className={`job-status ${job.status}`}>
-                      {job.status}
-                    </span>
-                  </div>
-                  
-                  <p className="job-slug">
-                    #{job.slug}
-                  </p>
-                  
-                  <div className="job-tags">
-                    {job.tags.map((tag, index) => (
-                      <span key={index} className="job-tag">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="job-actions">
-                  <div className="job-buttons">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditJob(job);
-                      }}
-                      className="job-btn"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleArchiveJob(job);
-                      }}
-                      className={`job-btn ${job.status === 'active' ? 'archive' : 'unarchive'}`}
-                    >
-                      {job.status === 'active' ? 'Archive' : 'Unarchive'}
-                    </button>
-                  </div>
-                  
-                  <div className="job-order">
-                    Order: {job.order}
+        </SortableContext>
+        {createPortal(
+          <DragOverlay>
+            {activeId ? (
+              <div className="job-card dragging">
+                <div className="job-content">
+                  <div className="job-info">
+                    <div className="job-header">
+                      <h3 className="job-title">
+                        {filteredJobs.find(job => job.id === activeId)?.title}
+                      </h3>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))
+            ) : null}
+          </DragOverlay>,
+          document.body
         )}
-      </div>
+      </DndContext>
 
       {showForm && (
         <JobForm

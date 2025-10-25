@@ -1,9 +1,91 @@
 import React, { useState } from 'react';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { fetchJobs, createJob, updateJob } from '../store/slices/jobsSlice';
 import JobForm from '../components/Jobs/JobForm';
 import type { Job } from '../types/index.ts';
 import './JobsPage.css';
+
+// Sortable Job Card Component
+const SortableJobCard: React.FC<{ job: Job; onEdit: (job: Job) => void; onArchive: (job: Job) => void }> = ({ job, onEdit, onArchive }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: job.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`job-card ${job.status === 'archived' ? 'archived' : ''}`}
+      {...attributes}
+      {...listeners}
+    >
+      <div className="job-content">
+        <div className="job-info">
+          <div className="job-header">
+            <h3 className="job-title">{job.title}</h3>
+            <span className={`job-status ${job.status}`}>
+              {job.status}
+            </span>
+          </div>
+          
+          <p className="job-slug">
+            #{job.slug}
+          </p>
+          
+          <div className="job-tags">
+            {job.tags.map((tag, index) => (
+              <span key={index} className="job-tag">
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
+        
+        <div className="job-actions">
+          <div className="job-buttons">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(job);
+              }}
+              className="job-btn"
+            >
+              Edit
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onArchive(job);
+              }}
+              className={`job-btn ${job.status === 'active' ? 'archive' : 'unarchive'}`}
+            >
+              {job.status === 'active' ? 'Archive' : 'Unarchive'}
+            </button>
+          </div>
+          
+          <div className="job-order">
+            Order: {job.order}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const JobsPage: React.FC = () => {
   const dispatch = useAppDispatch();

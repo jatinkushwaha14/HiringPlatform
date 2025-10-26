@@ -9,6 +9,7 @@ import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { fetchCandidates, updateCandidateStage } from '../store/slices/candidatesSlice';
 import { forceSeedDatabase } from '../services/seedData';
 import MentionInput from '../components/UI/MentionInput';
+import Pagination from '../components/UI/Pagination';
 import type { Candidate } from '../types';
 import './CandidatesPage.css';
 
@@ -118,6 +119,10 @@ const CandidatesPage: React.FC = () => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isSeeding, setIsSeeding] = useState(false);
   const hasValidData = useRef(false);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
   
   // Mock team members for mentions
   const teamMembers = [
@@ -255,6 +260,17 @@ const CandidatesPage: React.FC = () => {
     });
   }, [candidates, search, stageFilter]);
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredCandidates.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedCandidates = filteredCandidates.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, stageFilter]);
+
   const candidatesByStage = {
     applied: filteredCandidates.filter(c => c.stage === 'applied'),
     screen: filteredCandidates.filter(c => c.stage === 'screen'),
@@ -363,7 +379,7 @@ const CandidatesPage: React.FC = () => {
                   </p>
                 </div>
               ) : (
-                filteredCandidates.map((candidate) => (
+                paginatedCandidates.map((candidate) => (
                   <div key={candidate.id} className="candidate-item">
                     <div className="candidate-info">
                       <Link to={`/candidates/${candidate.id}`} className="candidate-name">
@@ -428,6 +444,21 @@ const CandidatesPage: React.FC = () => {
             document.body
           )}
         </DndContext>
+      )}
+
+      {/* Pagination for List View */}
+      {view === 'list' && filteredCandidates.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          pageSize={pageSize}
+          totalItems={filteredCandidates.length}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setCurrentPage(1);
+          }}
+        />
       )}
 
       {/* Candidate Profile Modal */}

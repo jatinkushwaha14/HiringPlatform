@@ -8,6 +8,7 @@ import { createPortal } from 'react-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { fetchJobs, createJob, updateJob } from '../store/slices/jobsSlice';
 import JobForm from '../components/Jobs/JobForm';
+import Pagination from '../components/UI/Pagination';
 import type { Job } from '../types/index.ts';
 import './JobsPage.css';
 
@@ -100,6 +101,10 @@ const JobsPage: React.FC = () => {
   const [editingJob, setEditingJob] = useState<Job | undefined>();
   const [activeId, setActiveId] = useState<string | null>(null);
   
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -122,6 +127,17 @@ const JobsPage: React.FC = () => {
     const matchesStatus = statusFilter === 'all' || job.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredJobs.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedJobs = filteredJobs.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter]);
 
   const handleCreateJob = () => {
     setEditingJob(undefined);
@@ -158,15 +174,15 @@ const JobsPage: React.FC = () => {
     setActiveId(null);
 
     if (active.id !== over.id) {
-      const oldIndex = filteredJobs.findIndex((job) => job.id === active.id);
-      const newIndex = filteredJobs.findIndex((job) => job.id === over.id);
+      const oldIndex = paginatedJobs.findIndex((job) => job.id === active.id);
+      const newIndex = paginatedJobs.findIndex((job) => job.id === over.id);
       
-      const reorderedJobs = arrayMove(filteredJobs, oldIndex, newIndex);
+      const reorderedJobs = arrayMove(paginatedJobs, oldIndex, newIndex);
       
-      // Update order values
+      // Update order values based on current page
       const updatedJobs = reorderedJobs.map((job, index) => ({
         ...job,
-        order: index + 1
+        order: startIndex + index + 1
       }));
 
       // Optimistic update - update local state immediately
@@ -239,7 +255,7 @@ const JobsPage: React.FC = () => {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <SortableContext items={filteredJobs.map(job => job.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext items={paginatedJobs.map(job => job.id)} strategy={verticalListSortingStrategy}>
           <div className="jobs-list">
             {filteredJobs.length === 0 ? (
               <div className="empty-state">
@@ -253,7 +269,7 @@ const JobsPage: React.FC = () => {
                 </p>
               </div>
             ) : (
-              filteredJobs.map((job) => (
+              paginatedJobs.map((job) => (
                 <SortableJobCard
                   key={job.id}
                   job={job}
@@ -272,7 +288,7 @@ const JobsPage: React.FC = () => {
                   <div className="job-info">
                     <div className="job-header">
                       <h3 className="job-title">
-                        {filteredJobs.find(job => job.id === activeId)?.title}
+                        {paginatedJobs.find(job => job.id === activeId)?.title}
                       </h3>
                     </div>
                   </div>
@@ -283,6 +299,20 @@ const JobsPage: React.FC = () => {
           document.body
         )}
       </DndContext>
+
+      {filteredJobs.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          pageSize={pageSize}
+          totalItems={filteredJobs.length}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setCurrentPage(1);
+          }}
+        />
+      )}
 
       {showForm && (
         <JobForm

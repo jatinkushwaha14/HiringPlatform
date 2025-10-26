@@ -137,6 +137,29 @@
     border-color: #007bff;
     color: #007bff;
   }
+
+  /* Mention Input in Modal */
+  .modal-body .mention-input-container {
+    margin: 0;
+  }
+
+  .modal-body .mention-textarea {
+    border: 1px solid #dee2e6;
+    font-size: 14px;
+  }
+
+  .modal-body .mention-textarea:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  }
+
+  .modal-body .mention-input-footer {
+    margin-top: 12px;
+  }
+
+  .modal-body .mention-submit-btn {
+    display: none; /* Hide since we have modal actions */
+  }
   
   .candidates-header {
     margin-bottom: 32px;

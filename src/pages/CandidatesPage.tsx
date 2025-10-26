@@ -1,15 +1,14 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragOverlay, useDroppable } from '@dnd-kit/core';
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { createPortal } from 'react-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { fetchCandidates, updateCandidateStage } from '../store/slices/candidatesSlice';
 import { forceSeedDatabase } from '../services/seedData';
-import VirtualizedCandidateList from '../components/Candidates/VirtualizedCandidateList';
-import ErrorBoundary from '../components/ErrorBoundary';
+import MentionInput from '../components/UI/MentionInput';
 import type { Candidate } from '../types';
 import './CandidatesPage.css';
 
@@ -119,6 +118,12 @@ const CandidatesPage: React.FC = () => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isSeeding, setIsSeeding] = useState(false);
   const hasValidData = useRef(false);
+  
+  // Mock team members for mentions
+  const teamMembers = [
+    'John Smith', 'Sarah Johnson', 'Mike Chen', 'Emily Davis', 
+    'Alex Rodriguez', 'Lisa Wang', 'David Brown', 'Maria Garcia'
+  ];
   
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -263,7 +268,8 @@ const CandidatesPage: React.FC = () => {
   if (error) return <div className="error">Error: {error}</div>;
 
   return (
-    <div className="candidates-page">
+    <>
+      <div className="candidates-page">
       <div className="candidates-header">
         <h1 className="candidates-title">Candidates</h1>
         <p className="candidates-subtitle">
@@ -489,14 +495,18 @@ const CandidatesPage: React.FC = () => {
               </button>
             </div>
             <div className="modal-body">
-              <textarea
+              <MentionInput
                 value={noteText}
-                onChange={(e) => setNoteText(e.target.value)}
-                placeholder="Enter your note here..."
-                className="note-textarea"
+                onChange={setNoteText}
+                placeholder="Enter your note here... Type @ to mention candidates, jobs, or team members"
                 rows={6}
+                candidates={candidates}
+                jobs={[]}
+                teamMembers={teamMembers}
+                onSubmit={handleSaveNote}
               />
-              <div className="modal-actions">
+            </div>
+            <div className="modal-actions">
                 <button 
                   className="action-btn"
                   onClick={handleSaveNote}
@@ -515,11 +525,11 @@ const CandidatesPage: React.FC = () => {
                   Cancel
                 </button>
               </div>
-            </div>
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 };
 

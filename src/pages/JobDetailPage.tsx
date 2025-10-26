@@ -24,11 +24,23 @@ const JobDetailPage: React.FC = () => {
   }, [dispatch, jobs.length]);
 
   useEffect(() => {
-    dispatch(fetchCandidates({}));
+    // Keep trying to fetch candidates until we get some
+    const fetchCandidatesWithRetry = async () => {
+      const result = await dispatch(fetchCandidates({}));
+      if (result.payload && Array.isArray(result.payload) && result.payload.length === 0) {
+        // If no candidates, wait a bit and try again
+        setTimeout(() => {
+          dispatch(fetchCandidates({}));
+        }, 1000);
+      }
+    };
+    
+    fetchCandidatesWithRetry();
   }, [dispatch]);
 
   const job = jobs.find(j => j.id === jobId);
   const jobCandidates = candidates.filter(c => c.jobId === jobId);
+  
   const candidatesByStage = {
     applied: jobCandidates.filter(c => c.stage === 'applied'),
     screen: jobCandidates.filter(c => c.stage === 'screen'),

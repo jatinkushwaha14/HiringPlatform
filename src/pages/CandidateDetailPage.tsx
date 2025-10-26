@@ -3,6 +3,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { fetchCandidates, updateCandidateStage } from '../store/slices/candidatesSlice';
 import { fetchJobs } from '../store/slices/jobsSlice';
+import MentionInput from '../components/UI/MentionInput';
+import MentionDisplay from '../components/UI/MentionDisplay';
 import type { Candidate } from '../types';
 import './CandidateDetailPage.css';
 
@@ -16,12 +18,29 @@ const CandidateDetailPage: React.FC = () => {
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [noteText, setNoteText] = useState('');
   const [notes, setNotes] = useState<Array<{ id: string; text: string; createdAt: string }>>([]);
+  
+  // Mock team members for mentions
+  const teamMembers = [
+    'John Smith', 'Sarah Johnson', 'Mike Chen', 'Emily Davis', 
+    'Alex Rodriguez', 'Lisa Wang', 'David Brown', 'Maria Garcia'
+  ];
+
+  // No sample notes - start with empty notes
 
   useEffect(() => {
-    if (candidates.length === 0) {
-      dispatch(fetchCandidates({}));
-    }
-  }, [dispatch, candidates.length]);
+    // Keep trying to fetch candidates until we get some
+    const fetchCandidatesWithRetry = async () => {
+      const result = await dispatch(fetchCandidates({}));
+      if (result.payload && Array.isArray(result.payload) && result.payload.length === 0) {
+        // If no candidates, wait a bit and try again
+        setTimeout(() => {
+          dispatch(fetchCandidates({}));
+        }, 1000);
+      }
+    };
+    
+    fetchCandidatesWithRetry();
+  }, [dispatch]);
 
   useEffect(() => {
     if (jobs.length === 0) {
@@ -181,7 +200,12 @@ const CandidateDetailPage: React.FC = () => {
                 notes.map((note) => (
                   <div key={note.id} className="note-item">
                     <div className="note-content">
-                      <p>{note.text}</p>
+                      <MentionDisplay
+                        text={note.text}
+                        candidates={candidates}
+                        jobs={jobs}
+                        teamMembers={teamMembers}
+                      />
                       <span className="note-date">
                         {new Date(note.createdAt).toLocaleString()}
                       </span>
@@ -217,12 +241,15 @@ const CandidateDetailPage: React.FC = () => {
               </button>
             </div>
             <div className="modal-body">
-              <textarea
+              <MentionInput
                 value={noteText}
-                onChange={(e) => setNoteText(e.target.value)}
-                placeholder="Enter your note here..."
-                className="note-textarea"
+                onChange={setNoteText}
+                placeholder="Enter your note here... Type @ to mention candidates, jobs, or team members"
                 rows={6}
+                candidates={candidates}
+                jobs={jobs}
+                teamMembers={teamMembers}
+                onSubmit={handleSaveNote}
               />
             </div>
             <div className="modal-actions">

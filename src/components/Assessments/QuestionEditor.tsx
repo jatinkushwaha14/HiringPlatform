@@ -39,6 +39,30 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
     onUpdateQuestion({ options: newOptions });
   };
 
+  const handleCorrectAnswerChange = (value: any) => {
+    onUpdateQuestion({ correctAnswer: value });
+  };
+
+  const handleCorrectAnswersChange = (value: string[]) => {
+    onUpdateQuestion({ correctAnswers: value });
+  };
+
+  // Validation: Check if question has correct answers set
+  const hasCorrectAnswer = () => {
+    if (question.type === 'single-choice') {
+      return question.correctAnswer && question.correctAnswer.trim() !== '';
+    }
+    if (question.type === 'multi-choice') {
+      return question.correctAnswers && question.correctAnswers.length > 0;
+    }
+    // For other question types, correct answers are optional
+    return true;
+  };
+
+  const isQuestionValid = () => {
+    return question.question.trim() !== '' && hasCorrectAnswer();
+  };
+
   const getQuestionTypeIcon = (type: AssessmentQuestion['type']) => {
     const icons = {
       'single-choice': '🔘',
@@ -80,6 +104,16 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
           )}
         </div>
         <div className="question-actions">
+          {/* Validation indicators */}
+          {!isQuestionValid() && (
+            <span className="validation-warning">
+              {!question.question.trim() ? 'Missing question text' : 
+               !hasCorrectAnswer() ? 'Missing correct answer' : 'Invalid'}
+            </span>
+          )}
+          {isQuestionValid() && (
+            <span className="validation-success">✓ Valid</span>
+          )}
           <span className="required-indicator">{question.required ? 'Required' : 'Optional'}</span>
           <button
             onClick={(e) => {
@@ -144,6 +178,51 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
               <button onClick={handleAddOption} className="add-option-btn">
                 + Add Option
               </button>
+            </div>
+          )}
+
+          {/* Correct Answer Settings */}
+          {(question.type === 'single-choice' || question.type === 'multi-choice') && question.options && question.options.length > 0 && (
+            <div className="correct-answer-section">
+              <label>Correct Answer(s):</label>
+              
+              {question.type === 'single-choice' && (
+                <select
+                  value={question.correctAnswer || ''}
+                  onChange={(e) => handleCorrectAnswerChange(e.target.value)}
+                  className="correct-answer-select"
+                >
+                  <option value="">Select correct answer...</option>
+                  {question.options.map((option, index) => (
+                    <option key={index} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              {question.type === 'multi-choice' && (
+                <div className="multi-choice-correct">
+                  {question.options.map((option, index) => (
+                    <label key={index} className="correct-option-label">
+                      <input
+                        type="checkbox"
+                        checked={question.correctAnswers?.includes(option) || false}
+                        onChange={(e) => {
+                          const currentAnswers = question.correctAnswers || [];
+                          if (e.target.checked) {
+                            handleCorrectAnswersChange([...currentAnswers, option]);
+                          } else {
+                            handleCorrectAnswersChange(currentAnswers.filter(ans => ans !== option));
+                          }
+                        }}
+                        className="correct-option-checkbox"
+                      />
+                      <span className="correct-option-text">{option}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

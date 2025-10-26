@@ -1,0 +1,296 @@
+.assessment-results {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.results-header {
+  margin-bottom: 32px;
+  border-bottom: 2px solid #e1e5e9;
+  padding-bottom: 24px;
+}
+
+.results-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 24px 0;
+}
+
+.results-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.assessment-info {
+  flex: 1;
+}
+
+.assessment-name {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 8px 0;
+}
+
+.candidate-name {
+  font-size: 16px;
+  color: #6c757d;
+  margin: 0 0 4px 0;
+}
+
+.completion-date {
+  font-size: 14px;
+  color: #6c757d;
+  margin: 0;
+}
+
+.overall-score {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.score-circle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.score-circle::before {
+  content: '';
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  background: white;
+  border-radius: 50%;
+}
+
+.score-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+.score-percentage {
+  font-size: 24px;
+  font-weight: bold;
+  color: #1a1a1a;
+  display: block;
+}
+
+.score-fraction {
+  font-size: 12px;
+  color: #6c757d;
+  display: block;
+}
+
+.sections-results {
+  margin-bottom: 32px;
+}
+
+.section-result {
+  margin-bottom: 32px;
+  padding: 20px;
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  background: #f8f9fa;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.section-score {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.section-score .score-percentage {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.section-score .score-fraction {
+  font-size: 14px;
+  color: #6c757d;
+}
+
+.questions-results {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.question-result {
+  padding: 16px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+}
+
+.question-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  gap: 16px;
+}
+
+.question-text {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1a1a1a;
+  margin: 0;
+  flex: 1;
+}
+
+.question-score {
+  flex-shrink: 0;
+}
+
+.score-indicator {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+  min-width: 40px;
+  text-align: center;
+}
+
+.answer-section {
+  margin-top: 12px;
+}
+
+.answer-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #6c757d;
+  margin-bottom: 8px;
+}
+
+.answer-content {
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border-left: 3px solid #007bff;
+}
+
+.answer-text {
+  font-size: 15px;
+  color: #1a1a1a;
+  line-height: 1.5;
+}
+
+.answer-list {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.answer-list li {
+  font-size: 15px;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+}
+
+.results-summary {
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e1e5e9;
+}
+
+.results-summary h4 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 16px 0;
+}
+
+.summary-stats {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .assessment-results {
+    padding: 16px;
+    margin: 16px;
+  }
+  
+  .results-meta {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .section-score {
+    align-items: flex-start;
+  }
+  
+  .question-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .summary-stats {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .stat-item {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}

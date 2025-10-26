@@ -23,13 +23,48 @@
 
 .assessments-controls {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 16px;
   margin-bottom: 32px;
   padding: 24px;
   background: #f8f9fa;
   border-radius: 8px;
   border: 1px solid #e9ecef;
+}
+
+.view-mode-toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.mode-btn {
+  padding: 10px 20px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  background: white;
+  color: #6c757d;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mode-btn.active {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.mode-btn:hover:not(.active) {
+  background: #f8f9fa;
+  border-color: #adb5bd;
+}
+
+.controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .job-selector {
@@ -187,7 +222,7 @@
   gap: 8px;
 }
 
-.edit-btn, .preview-btn {
+.edit-btn, .preview-btn, .take-btn, .responses-btn {
   padding: 6px 12px;
   border: 1px solid #ddd;
   border-radius: 4px;
@@ -208,6 +243,18 @@
   background: #28a745;
   color: white;
   border-color: #28a745;
+}
+
+.take-btn:hover {
+  background: #17a2b8;
+  color: white;
+  border-color: #17a2b8;
+}
+
+.responses-btn:hover {
+  background: #6f42c1;
+  color: white;
+  border-color: #6f42c1;
 }
 
 .delete-btn {
@@ -377,4 +424,311 @@
   flex: 1;
   overflow-y: auto;
   padding: 0;
+}
+
+/* Response Management Styles */
+.response-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.assessment-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.assessment-selector label {
+  font-weight: 600;
+  color: #333;
+}
+
+.assessment-select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  min-width: 300px;
+  background: white;
+}
+
+.assessment-select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.responses-list h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 16px 0;
+}
+
+.response-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 16px;
+}
+
+.response-card {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 20px;
+  transition: box-shadow 0.2s;
+}
+
+.response-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.response-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.response-header h4 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.response-date {
+  font-size: 12px;
+  color: #666;
+  background: #f8f9fa;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.response-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.candidate-email {
+  font-size: 14px;
+  color: #007bff;
+  font-weight: 500;
+}
+
+.response-count {
+  font-size: 14px;
+  color: #666;
+  background: #e9ecef;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.response-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.view-response-btn {
+  padding: 8px 16px;
+  border: 1px solid #007bff;
+  border-radius: 4px;
+  background: white;
+  color: #007bff;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.view-response-btn:hover {
+  background: #007bff;
+  color: white;
+}
+
+/* Assessment Taker Modal */
+.taker-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.taker-modal {
+  background: white;
+  border-radius: 12px;
+  width: 95%;
+  max-width: 900px;
+  height: 90%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.taker-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e9ecef;
+  background: #f8f9fa;
+}
+
+.taker-modal-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.taker-close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #666;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  border-radius: 4px;
+}
+
+.taker-close-btn:hover {
+  color: #333;
+  background: #e9ecef;
+}
+
+.taker-modal-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.candidate-selector-section {
+  padding: 20px 24px;
+  border-bottom: 1px solid #e9ecef;
+  background: #f8f9fa;
+}
+
+.candidate-selector-section label {
+  display: block;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.candidate-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  background: white;
+}
+
+.candidate-select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* Assessment Results Modal */
+.results-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.results-modal {
+  background: white;
+  border-radius: 12px;
+  width: 95%;
+  max-width: 1000px;
+  height: 90%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.results-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e9ecef;
+  background: #f8f9fa;
+}
+
+.results-modal-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.results-close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #666;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  border-radius: 4px;
+}
+
+.results-close-btn:hover {
+  color: #333;
+  background: #e9ecef;
+}
+
+.results-modal-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .assessments-controls {
+    padding: 16px;
+  }
+  
+  .controls-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .assessment-actions {
+    flex-wrap: wrap;
+  }
+  
+  .assessment-cards,
+  .response-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .taker-modal,
+  .results-modal {
+    width: 98%;
+    height: 95%;
+  }
 }

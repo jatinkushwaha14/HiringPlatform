@@ -42,7 +42,45 @@ const AssessmentBuilder: React.FC<AssessmentBuilderProps> = ({ assessment, onClo
     setActiveSectionId(newSection.id);
   };
 
+  // Validation: Check if all questions are valid
+  const validateAssessment = () => {
+    const invalidQuestions = [];
+    
+    localAssessment.sections.forEach(section => {
+      section.questions.forEach(question => {
+        const hasQuestionText = question.question.trim() !== '';
+        const hasCorrectAnswer = question.type === 'single-choice' 
+          ? question.correctAnswer && question.correctAnswer.trim() !== ''
+          : question.type === 'multi-choice'
+          ? question.correctAnswers && question.correctAnswers.length > 0
+          : true; // Other types don't require correct answers
+        
+        if (!hasQuestionText || !hasCorrectAnswer) {
+          invalidQuestions.push({
+            section: section.title,
+            question: question.question || 'Untitled Question',
+            issue: !hasQuestionText ? 'Missing question text' : 'Missing correct answer'
+          });
+        }
+      });
+    });
+    
+    return invalidQuestions;
+  };
+
   const handleSaveAssessment = async () => {
+    // Validate before saving
+    const invalidQuestions = validateAssessment();
+    
+    if (invalidQuestions.length > 0) {
+      const errorMessage = invalidQuestions.map(q => 
+        `• ${q.section}: "${q.question}" - ${q.issue}`
+      ).join('\n');
+      
+      alert(`Cannot save assessment. Please fix the following issues:\n\n${errorMessage}`);
+      return;
+    }
+    
     try {
       await dispatch(updateAssessment({ 
         id: assessment.id, 
@@ -85,7 +123,9 @@ const AssessmentBuilder: React.FC<AssessmentBuilderProps> = ({ assessment, onClo
       question: '',
       required: false,
       options: questionType === 'single-choice' || questionType === 'multi-choice' ? [''] : undefined,
-      maxLength: questionType === 'short-text' ? 100 : questionType === 'long-text' ? 1000 : undefined
+      maxLength: questionType === 'short-text' ? 100 : questionType === 'long-text' ? 1000 : undefined,
+      correctAnswer: questionType === 'single-choice' ? '' : undefined,
+      correctAnswers: questionType === 'multi-choice' ? [] : undefined
     };
 
     const updatedSections = localAssessment.sections.map(section =>
@@ -139,7 +179,16 @@ const AssessmentBuilder: React.FC<AssessmentBuilderProps> = ({ assessment, onClo
             />
           </div>
           <div className="builder-actions">
-            <button onClick={handleSaveAssessment} className="save-btn">
+            {validateAssessment().length > 0 && (
+              <span className="validation-status">
+                ⚠️ {validateAssessment().length} issue(s) to fix
+              </span>
+            )}
+            <button 
+              onClick={handleSaveAssessment} 
+              className={`save-btn ${validateAssessment().length > 0 ? 'disabled' : ''}`}
+              disabled={validateAssessment().length > 0}
+            >
               💾 Save Changes
             </button>
             <button onClick={onClose} className="close-btn">

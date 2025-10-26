@@ -43,6 +43,8 @@ export interface AssessmentQuestion {
   min?: number;
   max?: number;
   maxLength?: number;
+  correctAnswer?: string; // For single-choice questions
+  correctAnswers?: string[]; // For multi-choice questions
   conditionalLogic?: {
     dependsOn: string;
     condition: string;

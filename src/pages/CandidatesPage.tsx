@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragOverlay, useDroppable } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
@@ -39,7 +40,9 @@ const SortableCandidateCard: React.FC<{
       {...attributes}
       {...listeners}
     >
-      <h4 className="kanban-card-name">{candidate.name}</h4>
+      <Link to={`/candidates/${candidate.id}`} className="kanban-card-name">
+        {candidate.name}
+      </Link>
       <p className="kanban-card-email">{candidate.email}</p>
       <div className="kanban-card-actions">
         <button 
@@ -313,7 +316,9 @@ const CandidatesPage: React.FC = () => {
             filteredCandidates.map((candidate) => (
               <div key={candidate.id} className="candidate-card">
                 <div className="candidate-info">
-                  <h3 className="candidate-name">{candidate.name}</h3>
+                  <Link to={`/candidates/${candidate.id}`} className="candidate-name">
+                    {candidate.name}
+                  </Link>
                   <p className="candidate-email">{candidate.email}</p>
                   <span className={`candidate-stage ${candidate.stage}`}>
                     {candidate.stage}

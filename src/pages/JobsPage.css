@@ -154,6 +154,15 @@
     font-weight: 600;
     color: #1a1a1a;
   }
+
+  .job-title-link {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .job-title-link:hover .job-title {
+    color: #007bff;
+  }
   
   .job-status {
     padding: 4px 12px;

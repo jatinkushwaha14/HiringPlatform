@@ -142,6 +142,11 @@
     font-size: 18px;
     font-weight: 600;
     color: #1a1a1a;
+    text-decoration: none;
+  }
+
+  .candidate-name:hover {
+    color: #007bff;
   }
   
   .candidate-email {
@@ -275,6 +280,11 @@
     font-size: 14px;
     font-weight: 600;
     color: #1a1a1a;
+    text-decoration: none;
+  }
+
+  .kanban-card-name:hover {
+    color: #007bff;
   }
   
   .kanban-card-email {

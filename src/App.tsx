@@ -1,87 +1,72 @@
-import React from 'react';
 import { Provider } from 'react-redux';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { store } from './store';
 import JobsPage from './pages/JobsPage';
+import JobDetailPage from './pages/JobDetailPage';
 import CandidatesPage from './pages/CandidatesPage';
+import CandidateDetailPage from './pages/CandidateDetailPage';
 import AssessmentsPage from './pages/AssessmentsPage';
 import ApiDemo from './components/ApiDemo';
 import './App.css';
 
+function Navigation() {
+  const location = useLocation();
+  
+  const navItems = [
+    { path: '/jobs', label: 'Jobs' },
+    { path: '/candidates', label: 'Candidates' },
+    { path: '/assessments', label: 'Assessments' },
+    { path: '/api-demo', label: '🚀 API Demo' }
+  ];
+
+  return (
+    <nav style={{ 
+      padding: '16px 24px', 
+      borderBottom: '1px solid #e1e5e9',
+      backgroundColor: 'white',
+      display: 'flex',
+      gap: '16px'
+    }}>
+      {navItems.map((item) => (
+        <Link
+          key={item.path}
+          to={item.path}
+          style={{
+            padding: '8px 16px',
+            border: 'none',
+            backgroundColor: location.pathname.startsWith(item.path) ? '#007bff' : 'transparent',
+            color: location.pathname.startsWith(item.path) ? 'white' : '#495057',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontWeight: '500',
+            textDecoration: 'none',
+            display: 'inline-block'
+          }}
+        >
+          {item.label}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
 function App() {
-  const [currentPage, setCurrentPage] = React.useState<'jobs' | 'candidates' | 'assessments' | 'api-demo'>('jobs');
   return (
     <Provider store={store}>
-      <div className="App">
-        <nav style={{ 
-          padding: '16px 24px', 
-          borderBottom: '1px solid #e1e5e9',
-          backgroundColor: 'white',
-          display: 'flex',
-          gap: '16px'
-        }}>
-          <button
-            onClick={() => setCurrentPage('jobs')}
-            style={{
-              padding: '8px 16px',
-              border: 'none',
-              backgroundColor: currentPage === 'jobs' ? '#007bff' : 'transparent',
-              color: currentPage === 'jobs' ? 'white' : '#495057',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontWeight: '500'
-            }}
-          >
-            Jobs
-          </button>
-          <button
-            onClick={() => setCurrentPage('candidates')}
-            style={{
-              padding: '8px 16px',
-              border: 'none',
-              backgroundColor: currentPage === 'candidates' ? '#007bff' : 'transparent',
-              color: currentPage === 'candidates' ? 'white' : '#495057',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontWeight: '500'
-            }}
-          >
-            Candidates
-          </button>
-          <button
-            onClick={() => setCurrentPage('assessments')}
-            style={{
-              padding: '8px 16px',
-              border: 'none',
-              backgroundColor: currentPage === 'assessments' ? '#007bff' : 'transparent',
-              color: currentPage === 'assessments' ? 'white' : '#495057',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontWeight: '500'
-            }}
-          >
-            Assessments
-          </button>
-          <button
-            onClick={() => setCurrentPage('api-demo')}
-            style={{
-              padding: '8px 16px',
-              border: 'none',
-              backgroundColor: currentPage === 'api-demo' ? '#007bff' : 'transparent',
-              color: currentPage === 'api-demo' ? 'white' : '#495057',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontWeight: '500'
-            }}
-          >
-            🚀 API Demo
-          </button>
-        </nav>
-        
-        {currentPage === 'jobs' && <JobsPage />}
-        {currentPage === 'candidates' && <CandidatesPage />}
-        {currentPage === 'assessments' && <AssessmentsPage />}
-        {currentPage === 'api-demo' && <ApiDemo />}
-      </div>
+      <Router>
+        <div className="App">
+          <Navigation />
+          <Routes>
+            <Route path="/" element={<JobsPage />} />
+            <Route path="/jobs" element={<JobsPage />} />
+            <Route path="/jobs/:jobId" element={<JobDetailPage />} />
+            <Route path="/candidates" element={<CandidatesPage />} />
+            <Route path="/candidates/:candidateId" element={<CandidateDetailPage />} />
+            <Route path="/assessments" element={<AssessmentsPage />} />
+            <Route path="/api-demo" element={<ApiDemo />} />
+          </Routes>
+        </div>
+      </Router>
     </Provider>
   );
 }

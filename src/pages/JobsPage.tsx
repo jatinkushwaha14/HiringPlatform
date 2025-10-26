@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
@@ -38,7 +39,9 @@ const SortableJobCard: React.FC<{ job: Job; onEdit: (job: Job) => void; onArchiv
       <div className="job-content">
         <div className="job-info">
           <div className="job-header">
-            <h3 className="job-title">{job.title}</h3>
+            <Link to={`/jobs/${job.id}`} className="job-title-link">
+              <h3 className="job-title">{job.title}</h3>
+            </Link>
             <span className={`job-status ${job.status}`}>
               {job.status}
             </span>

@@ -154,22 +154,34 @@ const JobDetailPage: React.FC = () => {
                   <p>No candidates have applied for this job yet.</p>
                 </div>
               ) : (
-                jobCandidates.map((candidate) => (
-                  <div key={candidate.id} className="candidate-item">
-                    <div className="candidate-info">
-                      <Link 
-                        to={`/candidates/${candidate.id}`}
-                        className="candidate-name"
-                      >
-                        {candidate.name}
-                      </Link>
-                      <span className="candidate-email">{candidate.email}</span>
-                    </div>
-                    <span className={`candidate-stage ${candidate.stage}`}>
-                      {candidate.stage}
+                <div className="job-candidates-list">
+                  <div className="list-header">
+                    <span className="candidate-count">
+                      {jobCandidates.length} candidate{jobCandidates.length !== 1 ? 's' : ''} applied
+                    </span>
+                    <span className="performance-note">
+                      📋 Regular list (virtualization available for large lists)
                     </span>
                   </div>
-                ))
+                  <div className="job-candidates-container">
+                    {jobCandidates.map((candidate) => (
+                      <div key={candidate.id} className="candidate-item">
+                        <div className="candidate-info">
+                          <Link 
+                            to={`/candidates/${candidate.id}`}
+                            className="candidate-name"
+                          >
+                            {candidate.name}
+                          </Link>
+                          <span className="candidate-email">{candidate.email}</span>
+                        </div>
+                        <span className={`candidate-stage ${candidate.stage}`}>
+                          {candidate.stage}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
           </div>

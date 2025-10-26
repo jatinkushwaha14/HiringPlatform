@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragOverlay, useDroppable } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -8,6 +8,8 @@ import { createPortal } from 'react-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { fetchCandidates, updateCandidateStage } from '../store/slices/candidatesSlice';
 import { forceSeedDatabase } from '../services/seedData';
+import VirtualizedCandidateList from '../components/Candidates/VirtualizedCandidateList';
+import ErrorBoundary from '../components/ErrorBoundary';
 import type { Candidate } from '../types';
 import './CandidatesPage.css';
 
@@ -115,6 +117,8 @@ const CandidatesPage: React.FC = () => {
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [noteText, setNoteText] = useState('');
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [isSeeding, setIsSeeding] = useState(false);
+  const hasValidData = useRef(false);
   
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -131,14 +135,37 @@ const CandidatesPage: React.FC = () => {
     dispatch(fetchCandidates({}));
   }, [dispatch]);
 
+  // Monitor candidates state changes
+  useEffect(() => {
+    console.log('Candidates state updated:', candidates.length, 'candidates');
+    hasValidData.current = candidates && Array.isArray(candidates) && candidates.length > 0;
+  }, [candidates]);
+
   const handleSeedData = async () => {
     console.log('Starting force seed...');
-    const success = await forceSeedDatabase();
-    if (success) {
-      console.log('Force seed completed, refreshing candidates...');
-      dispatch(fetchCandidates({}));
-    } else {
-      console.error('Force seed failed');
+    setIsSeeding(true);
+    try {
+      const success = await forceSeedDatabase();
+      if (success) {
+        console.log('Force seed completed, refreshing candidates...');
+        const result = await dispatch(fetchCandidates({}));
+        console.log('Fetch candidates result:', result);
+        console.log('Candidates from dispatch:', result.payload);
+        console.log('Current candidates state:', candidates);
+        
+        // Check if we got candidates from the dispatch
+        if (result.payload && Array.isArray(result.payload) && result.payload.length > 0) {
+          console.log('Successfully fetched candidates, state should update soon');
+        } else {
+          console.warn('No candidates returned from fetch');
+        }
+      } else {
+        console.error('Force seed failed');
+      }
+    } catch (error) {
+      console.error('Error during seeding:', error);
+    } finally {
+      setIsSeeding(false);
     }
   };
 
@@ -211,12 +238,17 @@ const CandidatesPage: React.FC = () => {
     }
   };
 
-  const filteredCandidates = candidates.filter(candidate => {
-    const matchesSearch = candidate.name.toLowerCase().includes(search.toLowerCase()) ||
-      candidate.email.toLowerCase().includes(search.toLowerCase());
-    const matchesStage = stageFilter === 'all' || candidate.stage === stageFilter;
-    return matchesSearch && matchesStage;
-  });
+  const filteredCandidates = useMemo(() => {
+    if (!candidates || !Array.isArray(candidates) || candidates.length === 0) {
+      return [];
+    }
+    return candidates.filter(candidate => {
+      const matchesSearch = candidate.name.toLowerCase().includes(search.toLowerCase()) ||
+        candidate.email.toLowerCase().includes(search.toLowerCase());
+      const matchesStage = stageFilter === 'all' || candidate.stage === stageFilter;
+      return matchesSearch && matchesStage;
+    });
+  }, [candidates, search, stageFilter]);
 
   const candidatesByStage = {
     applied: filteredCandidates.filter(c => c.stage === 'applied'),
@@ -240,18 +272,19 @@ const CandidatesPage: React.FC = () => {
         <div style={{ marginTop: '16px' }}>
           <button
             onClick={handleSeedData}
+            disabled={isSeeding}
             style={{
               padding: '8px 16px',
-              backgroundColor: '#28a745',
+              backgroundColor: isSeeding ? '#6c757d' : '#28a745',
               color: 'white',
               border: 'none',
               borderRadius: '6px',
-              cursor: 'pointer',
+              cursor: isSeeding ? 'not-allowed' : 'pointer',
               fontSize: '14px',
               marginRight: '8px'
             }}
           >
-            Generate Sample Data (1000 candidates)
+            {isSeeding ? 'Generating...' : 'Generate Sample Data (1000 candidates)'}
           </button>
           <span style={{ fontSize: '12px', color: '#666' }}>
             Current: {candidates.length} candidates
@@ -300,48 +333,61 @@ const CandidatesPage: React.FC = () => {
       </div>
 
       {view === 'list' ? (
-        <div className="candidates-list">
-          {filteredCandidates.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">👥</div>
-              <h3 className="empty-title">No candidates found</h3>
-              <p className="empty-message">
-                {search || stageFilter !== 'all' 
-                  ? 'Try adjusting your search or filters' 
-                  : 'No candidates have applied yet'
-                }
-              </p>
+        (loading || isSeeding) ? (
+          <div className="loading">
+            {isSeeding ? 'Generating sample data...' : 'Loading candidates...'}
+          </div>
+        ) : (
+          <div className="candidates-list-container">
+            <div className="list-header">
+              <span className="candidate-count">
+                {filteredCandidates.length} candidate{filteredCandidates.length !== 1 ? 's' : ''}
+              </span>
+              <span className="performance-note">
+                📋 Regular list (virtualization temporarily disabled for debugging)
+              </span>
             </div>
-          ) : (
-            filteredCandidates.map((candidate) => (
-              <div key={candidate.id} className="candidate-card">
-                <div className="candidate-info">
-                  <Link to={`/candidates/${candidate.id}`} className="candidate-name">
-                    {candidate.name}
-                  </Link>
-                  <p className="candidate-email">{candidate.email}</p>
-                  <span className={`candidate-stage ${candidate.stage}`}>
-                    {candidate.stage}
-                  </span>
+            <div className="candidates-list">
+              {filteredCandidates.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-icon">👥</div>
+                  <h3 className="empty-title">No candidates found</h3>
+                  <p className="empty-message">
+                    Try adjusting your search or filters, or generate sample data
+                  </p>
                 </div>
-                <div className="candidate-actions">
-                  <button 
-                    className="action-btn"
-                    onClick={() => handleViewProfile(candidate)}
-                  >
-                    View Profile
-                  </button>
-                  <button 
-                    className="action-btn"
-                    onClick={() => handleAddNote(candidate)}
-                  >
-                    Add Note
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+              ) : (
+                filteredCandidates.map((candidate) => (
+                  <div key={candidate.id} className="candidate-item">
+                    <div className="candidate-info">
+                      <Link to={`/candidates/${candidate.id}`} className="candidate-name">
+                        {candidate.name}
+                      </Link>
+                      <p className="candidate-email">{candidate.email}</p>
+                      <span className={`candidate-stage ${candidate.stage}`}>
+                        {candidate.stage}
+                      </span>
+                    </div>
+                    <div className="candidate-actions">
+                      <button 
+                        className="action-btn"
+                        onClick={() => handleViewProfile(candidate)}
+                      >
+                        View
+                      </button>
+                      <button 
+                        className="action-btn"
+                        onClick={() => handleAddNote(candidate)}
+                      >
+                        Note
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )
       ) : (
         <DndContext
           sensors={sensors}

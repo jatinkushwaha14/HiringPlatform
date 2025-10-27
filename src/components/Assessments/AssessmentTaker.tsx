@@ -43,8 +43,8 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
           candidateId 
         }));
         
-        if (result.payload) {
-          setResponses(result.payload.responses || {});
+        if (result.payload && typeof result.payload === 'object' && 'responses' in result.payload) {
+          setResponses((result.payload as AssessmentResponse).responses || {});
         } else {
           // No existing response - start fresh
           setResponses({});

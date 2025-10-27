@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import { List } from 'react-window';
 import { Link } from 'react-router-dom';
 import type { Candidate } from '../../types';
 import './VirtualizedCandidateList.css';
@@ -10,14 +9,16 @@ interface VirtualizedCandidateListProps {
   onAddNote: (candidate: Candidate) => void;
 }
 
+interface CandidateItemData {
+  candidates: Candidate[];
+  onViewProfile: (candidate: Candidate) => void;
+  onAddNote: (candidate: Candidate) => void;
+}
+
 interface CandidateItemProps {
   index: number;
   style: React.CSSProperties;
-  data: {
-    candidates: Candidate[];
-    onViewProfile: (candidate: Candidate) => void;
-    onAddNote: (candidate: Candidate) => void;
-  };
+  data: CandidateItemData;
 }
 
 const CandidateItem: React.FC<CandidateItemProps> = ({ index, style, data }) => {
@@ -98,19 +99,20 @@ const VirtualizedCandidateList: React.FC<VirtualizedCandidateListProps> = ({
           Showing {safeCandidates.length} candidate{safeCandidates.length !== 1 ? 's' : ''}
         </span>
         <span className="performance-note">
-          ⚡ Virtualized for optimal performance
+          ⚡ Optimized performance
         </span>
       </div>
       
-      <List
-        height={600} // Fixed height for the virtualized list
-        itemCount={safeCandidates.length}
-        itemSize={80} // Height of each candidate item
-        itemData={itemData}
-        className="candidate-list-container"
-      >
-        {CandidateItem}
-      </List>
+      <div className="candidate-list-container">
+        {safeCandidates.map((candidate, index) => (
+          <CandidateItem 
+            key={candidate.id}
+            index={index}
+            style={{ height: 80 }}
+            data={itemData}
+          />
+        ))}
+      </div>
     </div>
   );
 };

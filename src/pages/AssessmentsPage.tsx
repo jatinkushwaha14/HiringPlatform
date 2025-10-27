@@ -3,12 +3,12 @@ import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { fetchAssessments, fetchAllAssessments, createAssessment, deleteAssessment } from '../store/slices/assessmentsSlice';
 import { fetchJobs } from '../store/slices/jobsSlice';
 import { fetchCandidates } from '../store/slices/candidatesSlice';
-import { fetchAssessmentResponses, fetchCandidateResponses } from '../store/slices/assessmentResponsesSlice';
+import { fetchAssessmentResponses } from '../store/slices/assessmentResponsesSlice';
 import AssessmentBuilder from '../components/Assessments/AssessmentBuilder';
 import AssessmentTaker from '../components/Assessments/AssessmentTaker';
 import AssessmentResults from '../components/Assessments/AssessmentResults';
 import LivePreview from '../components/Assessments/LivePreview';
-import type { Assessment, AssessmentSection, AssessmentQuestion, AssessmentResponse } from '../types';
+import type { Assessment, AssessmentResponse } from '../types';
 import './AssessmentsPage.css';
 
 const AssessmentsPage: React.FC = () => {
@@ -70,8 +70,8 @@ const AssessmentsPage: React.FC = () => {
     
     try {
       const result = await dispatch(createAssessment(newAssessment));
-      if (result.payload) {
-        setEditingAssessment(result.payload);
+      if (result.payload && typeof result.payload === 'object' && 'id' in result.payload) {
+        setEditingAssessment(result.payload as Assessment);
         setShowBuilder(true);
       }
     } catch (error) {
@@ -117,7 +117,7 @@ const AssessmentsPage: React.FC = () => {
     setShowResults(true);
   };
 
-  const handleAssessmentComplete = (responseId: string) => {
+  const handleAssessmentComplete = (_responseId: string) => {
     setShowTaker(false);
     setSelectedAssessment(null);
     setSelectedCandidate('');

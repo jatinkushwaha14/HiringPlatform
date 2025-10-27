@@ -6,7 +6,6 @@ import JobDetailPage from './pages/JobDetailPage';
 import CandidatesPage from './pages/CandidatesPage';
 import CandidateDetailPage from './pages/CandidateDetailPage';
 import AssessmentsPage from './pages/AssessmentsPage';
-import ApiDemo from './components/ApiDemo';
 import './App.css';
 
 function Navigation() {
@@ -15,8 +14,7 @@ function Navigation() {
   const navItems = [
     { path: '/jobs', label: 'Jobs' },
     { path: '/candidates', label: 'Candidates' },
-    { path: '/assessments', label: 'Assessments' },
-    { path: '/api-demo', label: '🚀 API Demo' }
+    { path: '/assessments', label: 'Assessments' }
   ];
 
   return (
@@ -63,7 +61,6 @@ function App() {
             <Route path="/candidates" element={<CandidatesPage />} />
             <Route path="/candidates/:candidateId" element={<CandidateDetailPage />} />
             <Route path="/assessments" element={<AssessmentsPage />} />
-            <Route path="/api-demo" element={<ApiDemo />} />
           </Routes>
         </div>
       </Router>

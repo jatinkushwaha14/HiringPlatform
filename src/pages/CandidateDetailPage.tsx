@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { fetchCandidates, updateCandidateStage } from '../store/slices/candidatesSlice';
 import { fetchJobs } from '../store/slices/jobsSlice';
@@ -10,7 +10,6 @@ import './CandidateDetailPage.css';
 
 const CandidateDetailPage: React.FC = () => {
   const { candidateId } = useParams<{ candidateId: string }>();
-  const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { candidates, loading, error } = useAppSelector((state) => state.candidates);
   const { jobs } = useAppSelector((state) => state.jobs);

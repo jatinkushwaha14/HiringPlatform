@@ -6,7 +6,7 @@ import {
   submitAssessmentResponse,
   updateCurrentResponse 
 } from '../../store/slices/assessmentResponsesSlice';
-import type { Assessment, AssessmentQuestion } from '../../types';
+import type { Assessment, AssessmentQuestion, AssessmentResponse } from '../../types';
 import './AssessmentTaker.css';
 
 interface AssessmentTakerProps {
@@ -29,7 +29,6 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
   const [responses, setResponses] = useState<Record<string, any>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [existingResponse, setExistingResponse] = useState<AssessmentResponse | null>(null);
 
   const currentSection = assessment.sections[currentSectionIndex];
   const isLastSection = currentSectionIndex === assessment.sections.length - 1;
@@ -45,16 +44,13 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
         }));
         
         if (result.payload) {
-          setExistingResponse(result.payload);
-          setResponses(result.payload.responses);
+          setResponses(result.payload.responses || {});
         } else {
           // No existing response - start fresh
-          setExistingResponse(null);
           setResponses({});
         }
       } catch (error) {
         console.error('Error loading existing response:', error);
-        setExistingResponse(null);
         setResponses({});
       }
     };
@@ -67,7 +63,6 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
     setResponses({});
     setCurrentSectionIndex(0);
     setHasUnsavedChanges(false);
-    setExistingResponse(null);
   }, [candidateId]);
 
   // Auto-save responses as user types
@@ -121,7 +116,7 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
       
       if (result.type.endsWith('/fulfilled')) {
         setHasUnsavedChanges(false);
-        onComplete?.(result.payload.id);
+        onComplete?.((result.payload as AssessmentResponse).id);
       }
     } catch (error) {
       console.error('Failed to submit assessment:', error);

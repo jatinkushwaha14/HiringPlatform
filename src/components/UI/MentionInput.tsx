@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
 import type { Candidate, Job } from '../../types';
 import './MentionInput.css';
 
@@ -33,7 +32,6 @@ const MentionInput: React.FC<MentionInputProps> = ({
 }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<MentionSuggestion[]>([]);
-  const [mentionQuery, setMentionQuery] = useState('');
   const [cursorPosition, setCursorPosition] = useState(0);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(0);
   
@@ -85,7 +83,6 @@ const MentionInput: React.FC<MentionInputProps> = ({
     
     if (mentionMatch) {
       const query = mentionMatch[1];
-      setMentionQuery(query);
       setSuggestions(generateSuggestions(query));
       setShowSuggestions(true);
       setSelectedSuggestionIndex(0);
@@ -150,20 +147,6 @@ const MentionInput: React.FC<MentionInputProps> = ({
   // Handle suggestion click
   const handleSuggestionClick = (suggestion: MentionSuggestion) => {
     insertMention(suggestion);
-  };
-
-  // Get suggestion URL
-  const getSuggestionUrl = (suggestion: MentionSuggestion): string => {
-    switch (suggestion.type) {
-      case 'candidate':
-        return `/candidates/${suggestion.id}`;
-      case 'job':
-        return `/jobs/${suggestion.id}`;
-      case 'team':
-        return '#'; // Team members don't have detail pages yet
-      default:
-        return '#';
-    }
   };
 
   // Get suggestion icon

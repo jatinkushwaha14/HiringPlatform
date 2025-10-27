@@ -1,101 +1,112 @@
-import { http, HttpResponse } from 'msw';
+import { http, HttpResponse, delay } from 'msw';
 
 // Mock API endpoints for TalentFlow
 export const handlers = [
   // Jobs API
-  http.get('/api/jobs', () => {
+  http.get('/api/jobs', async () => {
+    await delay(300);
     return HttpResponse.json({
       success: true,
       data: [],
       message: 'Jobs fetched successfully'
-    }, { delay: 300 });
+    });
   }),
 
   http.post('/api/jobs', async ({ request }) => {
     const body = await request.json();
+    await delay(500);
     return HttpResponse.json({
       success: true,
-      data: { id: Date.now(), ...body },
+      data: { id: Date.now(), ...(body as object) },
       message: 'Job created successfully'
-    }, { delay: 500 });
+    });
   }),
 
   http.put('/api/jobs/:id', async ({ request, params }) => {
     const body = await request.json();
+    await delay(400);
     return HttpResponse.json({
       success: true,
-      data: { id: params.id, ...body },
+      data: { id: params.id, ...(body as object) },
       message: 'Job updated successfully'
-    }, { delay: 400 });
+    });
   }),
 
-  http.delete('/api/jobs/:id', () => {
+  http.delete('/api/jobs/:id', async () => {
+    await delay(300);
     return HttpResponse.json({
       success: true,
       message: 'Job deleted successfully'
-    }, { delay: 300 });
+    });
   }),
 
   // Candidates API
-  http.get('/api/candidates', () => {
+  http.get('/api/candidates', async () => {
+    await delay(400);
     return HttpResponse.json({
       success: true,
       data: [],
       message: 'Candidates fetched successfully'
-    }, { delay: 400 });
+    });
   }),
 
   http.put('/api/candidates/:id/stage', async ({ request, params }) => {
     const body = await request.json();
+    await delay(300);
     return HttpResponse.json({
       success: true,
       data: { id: params.id, stage: body },
       message: 'Candidate stage updated successfully'
-    }, { delay: 300 });
+    });
   }),
 
   // Assessments API
-  http.get('/api/assessments', () => {
+  http.get('/api/assessments', async () => {
+    await delay(350);
     return HttpResponse.json({
       success: true,
       data: [],
       message: 'Assessments fetched successfully'
-    }, { delay: 350 });
+    });
   }),
 
   http.post('/api/assessments', async ({ request }) => {
     const body = await request.json();
+    await delay(600);
     return HttpResponse.json({
       success: true,
-      data: { id: Date.now(), ...body },
+      data: { id: Date.now(), ...(body as object) },
       message: 'Assessment created successfully'
-    }, { delay: 600 });
+    });
   }),
 
   http.put('/api/assessments/:id', async ({ request, params }) => {
     const body = await request.json();
+    await delay(500);
     return HttpResponse.json({
       success: true,
-      data: { id: params.id, ...body },
+      data: { id: params.id, ...(body as object) },
       message: 'Assessment updated successfully'
-    }, { delay: 500 });
+    });
   }),
 
-  http.delete('/api/assessments/:id', () => {
+  http.delete('/api/assessments/:id', async () => {
+    await delay(300);
     return HttpResponse.json({
       success: true,
       message: 'Assessment deleted successfully'
-    }, { delay: 300 });
+    });
   }),
 
   // Assessment Responses API
   http.post('/api/assessments/:id/responses', async ({ request, params }) => {
     const body = await request.json();
+    await delay(800);
     return HttpResponse.json({
       success: true,
-      data: { id: Date.now(), assessmentId: params.id, ...body },
+      data: { id: Date.now(), assessmentId: params.id, ...(body as object) },
       message: 'Assessment response submitted successfully'
-    }, { delay: 800 });
+    });
   }),
 
   // Error simulation (10% chance)

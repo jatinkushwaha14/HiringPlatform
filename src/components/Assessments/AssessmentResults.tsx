@@ -1,5 +1,4 @@
 import React from 'react';
-import { useAppSelector } from '../../hooks/redux';
 import type { Assessment, AssessmentResponse } from '../../types';
 import './AssessmentResults.css';
 

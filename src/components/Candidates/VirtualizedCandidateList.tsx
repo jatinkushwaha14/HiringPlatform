@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { List } from 'react-window';
 import { Link } from 'react-router-dom';
-import type { Candidate } from '../types';
+import type { Candidate } from '../../types';
 import './VirtualizedCandidateList.css';
 
 interface VirtualizedCandidateListProps {

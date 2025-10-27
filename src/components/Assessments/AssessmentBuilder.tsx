@@ -43,8 +43,8 @@ const AssessmentBuilder: React.FC<AssessmentBuilderProps> = ({ assessment, onClo
   };
 
   // Validation: Check if all questions are valid
-  const validateAssessment = () => {
-    const invalidQuestions = [];
+  const validateAssessment = (): Array<{ section: string; question: string; issue: string }> => {
+    const invalidQuestions: Array<{ section: string; question: string; issue: string }> = [];
     
     localAssessment.sections.forEach(section => {
       section.questions.forEach(question => {

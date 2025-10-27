@@ -112,7 +112,7 @@ const LivePreview: React.FC<LivePreviewProps> = ({ assessment }) => {
                     const currentValues = responses[question.id] || [];
                     const newValues = e.target.checked
                       ? [...currentValues, option]
-                      : currentValues.filter(v => v !== option);
+                      : currentValues.filter((v: any) => v !== option);
                     handleResponseChange(question.id, newValues);
                   }}
                 />

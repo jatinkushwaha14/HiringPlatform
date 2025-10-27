@@ -178,7 +178,7 @@ const assessmentResponsesSlice = createSlice({
       })
       .addCase(fetchAssessmentResponse.fulfilled, (state, action) => {
         state.loading = false;
-        state.currentResponse = action.payload;
+        state.currentResponse = action.payload || null;
       })
       .addCase(fetchAssessmentResponse.rejected, (state, action) => {
         state.loading = false;

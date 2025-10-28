@@ -1,43 +1,163 @@
 import { http, HttpResponse, delay } from 'msw';
+import { db } from '../services/database';
+import type { Job } from '../types';
+
+function randomLatency() {
+  return 200 + Math.floor(Math.random() * 1000); // 200–1200ms
+}
+
+function maybeFailWrite() {
+  // 8% failure rate
+  if (Math.random() < 0.08) {
+    return true;
+  }
+  return false;
+}
 
 // Mock API endpoints for TalentFlow
 export const handlers = [
   // Jobs API
-  http.get('/api/jobs', async () => {
-    await delay(300);
+  http.get('/api/jobs', async ({ request }) => {
+    await delay(randomLatency());
+
+    const url = new URL(request.url);
+    const search = (url.searchParams.get('search') || '').toLowerCase();
+    const status = url.searchParams.get('status') || '';
+    const tagsParam = url.searchParams.get('tags') || '';
+    const page = Number(url.searchParams.get('page') || '1');
+    const pageSize = Number(url.searchParams.get('pageSize') || '10');
+    const sort = url.searchParams.get('sort') || 'order';
+
+    let jobs = await db.jobs.toArray();
+
+    if (search) {
+      jobs = jobs.filter(j =>
+        j.title.toLowerCase().includes(search) ||
+        j.tags.some(t => t.toLowerCase().includes(search))
+      );
+    }
+    if (status && status !== 'all') {
+      jobs = jobs.filter(j => j.status === status);
+    }
+    if (tagsParam) {
+      const selected = tagsParam.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+      if (selected.length > 0) {
+        jobs = jobs.filter(j => j.tags.some(t => selected.includes(t.toLowerCase())));
+      }
+    }
+
+    // sort by 'order' (default) or '-createdAt' etc.
+    const desc = sort.startsWith('-');
+    const sortKey = desc ? sort.slice(1) : sort;
+    jobs.sort((a: Job, b: Job) => {
+      const va = a[sortKey as keyof Job] as unknown as string | number;
+      const vb = b[sortKey as keyof Job] as unknown as string | number;
+      if (va === vb) return 0;
+      return (va > vb ? 1 : -1) * (desc ? -1 : 1);
+    });
+
+    const total = jobs.length;
+    const start = (page - 1) * pageSize;
+    const end = start + pageSize;
+    const items = jobs.slice(start, end);
+
     return HttpResponse.json({
       success: true,
-      data: [],
+      data: { items, total, page, pageSize },
       message: 'Jobs fetched successfully'
     });
   }),
 
   http.post('/api/jobs', async ({ request }) => {
-    const body = await request.json();
-    await delay(500);
+    await delay(randomLatency());
+    if (maybeFailWrite()) {
+      return HttpResponse.json({ success: false, message: 'Random write failure' }, { status: 500 });
+    }
+    const body = (await request.json()) as Omit<Job, 'id' | 'createdAt' | 'updatedAt'>;
+
+    // Unique slug validation
+    const existing = await db.jobs.where('slug').equals(body.slug).first();
+    if (existing) {
+      return HttpResponse.json({ success: false, message: 'Slug must be unique' }, { status: 409 });
+    }
+
+    const job: Job = {
+      ...body,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    } as Job;
+    await db.jobs.add(job);
+
     return HttpResponse.json({
       success: true,
-      data: { id: Date.now(), ...(body as object) },
+      data: job,
       message: 'Job created successfully'
     });
   }),
 
-  http.put('/api/jobs/:id', async ({ request, params }) => {
-    const body = await request.json();
-    await delay(400);
-    return HttpResponse.json({
-      success: true,
-      data: { id: params.id, ...(body as object) },
-      message: 'Job updated successfully'
-    });
+  http.patch('/api/jobs/:id', async ({ request, params }) => {
+    await delay(randomLatency());
+    if (maybeFailWrite()) {
+      return HttpResponse.json({ success: false, message: 'Random write failure' }, { status: 500 });
+    }
+    const id = params.id as string;
+    const updates = (await request.json()) as Partial<Job>;
+
+    // If slug is changing, ensure unique
+    if (updates.slug) {
+      const conflict = await db.jobs
+        .where('slug')
+        .equals(updates.slug)
+        .filter(j => j.id !== id)
+        .first();
+      if (conflict) {
+        return HttpResponse.json({ success: false, message: 'Slug must be unique' }, { status: 409 });
+      }
+    }
+
+    await db.jobs.update(id, { ...updates, updatedAt: new Date().toISOString() });
+    const saved = await db.jobs.get(id);
+    if (!saved) {
+      return HttpResponse.json({ success: false, message: 'Job not found' }, { status: 404 });
+    }
+    return HttpResponse.json({ success: true, data: saved, message: 'Job updated successfully' });
   }),
 
-  http.delete('/api/jobs/:id', async () => {
-    await delay(300);
-    return HttpResponse.json({
-      success: true,
-      message: 'Job deleted successfully'
-    });
+  // Reorder endpoint accepts fromOrder and toOrder, and updates order across affected jobs
+  http.patch('/api/jobs/:id/reorder', async ({ request }) => {
+    await delay(randomLatency());
+    // Higher failure chance to test rollback
+    if (maybeFailWrite()) {
+      return HttpResponse.json({ success: false, message: 'Reorder failed' }, { status: 500 });
+    }
+    const { fromOrder, toOrder } = (await request.json()) as { fromOrder: number; toOrder: number };
+    if (fromOrder === toOrder) {
+      return HttpResponse.json({ success: true, data: null, message: 'No change' });
+    }
+
+    const all = await db.jobs.orderBy('order').toArray();
+    const moving = all.find(j => j.order === fromOrder);
+    if (!moving) {
+      return HttpResponse.json({ success: false, message: 'Source order not found' }, { status: 400 });
+    }
+
+    // Remove moving and insert at new index
+    const list = all.sort((a, b) => a.order - b.order);
+    const oldIdx = list.findIndex(j => j.id === moving.id);
+    const newIdx = Math.max(0, Math.min(list.length - 1, toOrder - 1));
+    list.splice(oldIdx, 1);
+    list.splice(newIdx, 0, moving);
+
+    // Re-number orders starting at 1
+    for (let i = 0; i < list.length; i++) {
+      if (list[i].order !== i + 1) {
+        await db.jobs.update(list[i].id, { order: i + 1, updatedAt: new Date().toISOString() });
+      }
+    }
+
+    const updated = await db.jobs.orderBy('order').toArray();
+    return HttpResponse.json({ success: true, data: updated, message: 'Reordered successfully' });
   }),
 
   // Candidates API

@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragOverlay, type DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { createPortal } from 'react-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
-import { fetchJobs, createJob, updateJob } from '../store/slices/jobsSlice';
+import { fetchJobs, createJob, updateJob, reorderJob } from '../store/slices/jobsSlice';
 import JobForm from '../components/Jobs/JobForm';
 import Pagination from '../components/UI/Pagination';
 import type { Job } from '../types/index.ts';
@@ -96,7 +96,9 @@ const JobsPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { jobs, loading, error } = useAppSelector((state) => state.jobs);
   const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingJob, setEditingJob] = useState<Job | undefined>();
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -118,26 +120,24 @@ const JobsPage: React.FC = () => {
 
 
   React.useEffect(() => {
-    dispatch(fetchJobs());
-  }, [dispatch]);
+    dispatch(fetchJobs({
+      search,
+      status: statusFilter,
+      page: currentPage,
+      pageSize,
+      sort: 'order',
+      tags: selectedTags,
+    }));
+  }, [dispatch, search, statusFilter, currentPage, pageSize, selectedTags]);
 
-  const filteredJobs = jobs.filter(job => {
-    const matchesSearch = job.title.toLowerCase().includes(search.toLowerCase()) ||
-      job.tags.some(tag => tag.toLowerCase().includes(search.toLowerCase()));
-    const matchesStatus = statusFilter === 'all' || job.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  // Pagination calculations
-  const totalPages = Math.ceil(filteredJobs.length / pageSize);
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const paginatedJobs = filteredJobs.slice(startIndex, endIndex);
+  const filteredJobs = jobs; // server-like filtering handled by API
+  const totalPages = Math.ceil((useAppSelector((s) => s.jobs.total) || 0) / pageSize);
+  const paginatedJobs = filteredJobs; // already paginated by API
 
   // Reset to first page when filters change
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [search, statusFilter]);
+  }, [search, statusFilter, selectedTags.join(',')]);
 
   const handleCreateJob = () => {
     setEditingJob(undefined);
@@ -150,9 +150,19 @@ const JobsPage: React.FC = () => {
 
   const handleSubmitJob = async (jobData: Omit<Job, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (editingJob) {
-      await dispatch(updateJob({ id: editingJob.id, updates: jobData }));
+      const res = await dispatch(updateJob({ id: editingJob.id, updates: jobData }));
+      if ('error' in res) {
+        const anyRes = res as unknown as { payload?: string };
+        alert(anyRes.payload || 'Failed to update job');
+        return;
+      }
     } else {
-      await dispatch(createJob(jobData));
+      const res = await dispatch(createJob(jobData));
+      if ('error' in res) {
+        const anyRes = res as unknown as { payload?: string };
+        alert(anyRes.payload || 'Failed to create job');
+        return;
+      }
     }
     setShowForm(false);
     setEditingJob(undefined);
@@ -165,53 +175,36 @@ const JobsPage: React.FC = () => {
     }));
   };
 
-  const handleDragStart = (event: any) => {
-    setActiveId(event.active.id);
+  const handleDragStart = (event: DragEndEvent) => {
+    setActiveId(String(event.active.id));
   };
 
-  const handleDragEnd = async (event: any) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
 
-    if (active.id !== over.id) {
-      const oldIndex = paginatedJobs.findIndex((job) => job.id === active.id);
-      const newIndex = paginatedJobs.findIndex((job) => job.id === over.id);
-      
-      const reorderedJobs = arrayMove(paginatedJobs, oldIndex, newIndex);
-      
-      // Update order values based on current page
-      const updatedJobs = reorderedJobs.map((job, index) => ({
-        ...job,
-        order: startIndex + index + 1
-      }));
-
-      // Optimistic update - update local state immediately
-      // In a real app, you'd dispatch an action to update the Redux store
-      console.log('Reordering jobs:', updatedJobs);
-      
-      // Simulate API call with potential failure
-      try {
-        // Simulate 10% failure rate as per assignment requirements
-        if (Math.random() < 0.1) {
-          throw new Error('Simulated API failure');
-        }
-        
-        // Update each job's order in the database
-        for (const job of updatedJobs) {
-          await dispatch(updateJob({ 
-            id: job.id, 
-            updates: { order: job.order } 
+    if (over && active.id !== over.id) {
+      const activeId = String(active.id);
+      const overId = String(over.id);
+      const fromOrder = paginatedJobs.find((j) => String(j.id) === activeId)?.order;
+      const toOrder = paginatedJobs.find((j) => String(j.id) === overId)?.order;
+      if (fromOrder && toOrder) {
+        const res = await dispatch(reorderJob({ id: activeId, fromOrder, toOrder }));
+        if ('error' in res) {
+          alert('Reorder failed. Changes rolled back.');
+          dispatch(fetchJobs({
+            search,
+            status: statusFilter,
+            page: currentPage,
+            pageSize,
+            sort: 'order',
+            tags: selectedTags,
           }));
         }
-      } catch (error) {
-        console.error('Failed to reorder jobs:', error);
-        // Rollback - refresh the jobs to get the original order
-        dispatch(fetchJobs());
       }
     }
   };
-  if (loading) return <div>Loading jobs...</div>;
-  if (error) return <div>Error: {error}</div>;
+  // Keep rendering list; show inline indicators instead of full-page loading
 
   return (
     <div className="jobs-page">
@@ -227,8 +220,14 @@ const JobsPage: React.FC = () => {
           <input
             type="text"
             placeholder="Search jobs by title or tags..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                setSearch(searchInput);
+                setCurrentPage(1);
+              }
+            }}
             className="jobs-search"
           />
           <select
@@ -240,7 +239,30 @@ const JobsPage: React.FC = () => {
             <option value="active">Active</option>
             <option value="archived">Archived</option>
           </select>
+          <button
+            onClick={() => {
+              setSearch(searchInput);
+              setCurrentPage(1);
+            }}
+            className="jobs-filter"
+            style={{ padding: '8px 12px' }}
+          >
+            Search
+          </button>
+          <input
+            type="text"
+            placeholder="Filter by tags (comma-separated)"
+            value={selectedTags.join(', ')}
+            onChange={(e) => setSelectedTags(e.target.value.split(',').map(t => t.trim()).filter(Boolean))}
+            className="jobs-filter"
+          />
         </div>
+        {loading && (
+          <div style={{ fontSize: 12, color: '#666' }}>Loading…</div>
+        )}
+        {error && (
+          <div style={{ fontSize: 12, color: '#b00020' }}>Error: {error}</div>
+        )}
         <button
           onClick={handleCreateJob}
           className="create-job-btn"

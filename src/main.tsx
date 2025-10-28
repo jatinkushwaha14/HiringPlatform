@@ -4,17 +4,17 @@ import './index.css'
 import App from './App.tsx'
 import './services/seedData'
 
-// Start MSW in development
-if (import.meta.env.DEV) {
-  import('./mocks/browser').then(({ worker }) => {
-    worker.start({
-      onUnhandledRequest: 'bypass',
-    });
-  });
+async function start() {
+  if (import.meta.env.DEV) {
+    const { worker } = await import('./mocks/browser');
+    await worker.start({ onUnhandledRequest: 'bypass' });
+  }
+
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  );
 }
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+start();

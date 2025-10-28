@@ -27,8 +27,20 @@ async function apiRequest<T>(
       ...options,
     });
 
+    const contentType = response.headers.get('content-type') || '';
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      // Try parse error body when possible
+      if (contentType.includes('application/json')) {
+        const errJson = await response.json();
+        throw new Error(errJson?.message || `HTTP ${response.status}`);
+      }
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    if (!contentType.includes('application/json')) {
+      // This usually means MSW isn't intercepting and you got back index.html
+      const text = await response.text();
+      throw new Error('Expected JSON response. Is MSW worker running? First bytes: ' + text.slice(0, 80));
     }
 
     const data = await response.json();
@@ -41,8 +53,23 @@ async function apiRequest<T>(
 
 // Jobs API
 export const jobsApi = {
-  async getAll(): Promise<ApiResponse<any[]>> {
-    return apiRequest('/jobs');
+  async list(params: {
+    search?: string;
+    status?: string;
+    page?: number;
+    pageSize?: number;
+    sort?: string;
+    tags?: string[];
+  } = {}): Promise<ApiResponse<{ items: any[]; total: number; page: number; pageSize: number }>> {
+    const q = new URLSearchParams();
+    if (params.search) q.set('search', params.search);
+    if (params.status) q.set('status', params.status);
+    if (params.page) q.set('page', String(params.page));
+    if (params.pageSize) q.set('pageSize', String(params.pageSize));
+    if (params.sort) q.set('sort', params.sort);
+    if (params.tags && params.tags.length) q.set('tags', params.tags.join(','));
+    const query = q.toString() ? `?${q.toString()}` : '';
+    return apiRequest(`/jobs${query}`);
   },
 
   async create(job: any): Promise<ApiResponse<any>> {
@@ -52,10 +79,17 @@ export const jobsApi = {
     });
   },
 
-  async update(id: string, job: any): Promise<ApiResponse<any>> {
+  async update(id: string, updates: any): Promise<ApiResponse<any>> {
     return apiRequest(`/jobs/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(job),
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    });
+  },
+
+  async reorder(id: string, payload: { fromOrder: number; toOrder: number }): Promise<ApiResponse<any>> {
+    return apiRequest(`/jobs/${id}/reorder`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
     });
   },
 

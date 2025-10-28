@@ -102,15 +102,22 @@ export const jobsApi = {
 
 // Candidates API
 export const candidatesApi = {
-  async getAll(): Promise<ApiResponse<any[]>> {
-    return apiRequest('/candidates');
+  async list(params: { search?: string; stage?: string; page?: number; pageSize?: number } = {}): Promise<ApiResponse<{ items: any[]; total: number; page: number; pageSize: number }>> {
+    const q = new URLSearchParams();
+    if (params.search) q.set('search', params.search);
+    if (params.stage) q.set('stage', params.stage);
+    if (params.page) q.set('page', String(params.page));
+    if (params.pageSize) q.set('pageSize', String(params.pageSize));
+    const query = q.toString() ? `?${q.toString()}` : '';
+    return apiRequest(`/candidates${query}`);
   },
 
   async updateStage(id: string, stage: string): Promise<ApiResponse<any>> {
-    return apiRequest(`/candidates/${id}/stage`, {
-      method: 'PUT',
-      body: JSON.stringify({ stage }),
-    });
+    return apiRequest(`/candidates/${id}/stage`, { method: 'PUT', body: JSON.stringify({ stage }) });
+  },
+
+  async getTimeline(id: string): Promise<ApiResponse<any[]>> {
+    return apiRequest(`/candidates/${id}/timeline`);
   },
 };
 

@@ -9,6 +9,7 @@ import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { fetchCandidates, updateCandidateStage } from '../store/slices/candidatesSlice';
 import { forceSeedDatabase } from '../services/seedData';
 import MentionInput from '../components/UI/MentionInput';
+import VirtualizedCandidateList from '../components/Candidates/VirtualizedCandidateList';
 import Pagination from '../components/UI/Pagination';
 import type { Candidate } from '../types';
 import './CandidatesPage.css';
@@ -110,6 +111,7 @@ const CandidatesPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { candidates, loading, error } = useAppSelector((state) => state.candidates);
   const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [stageFilter, setStageFilter] = useState('all');
   const [view, setView] = useState<'list' | 'kanban'>('list');
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
@@ -142,8 +144,8 @@ const CandidatesPage: React.FC = () => {
   );
 
   useEffect(() => {
-    dispatch(fetchCandidates({}));
-  }, [dispatch]);
+    dispatch(fetchCandidates({ search, stage: stageFilter === 'all' ? undefined : stageFilter, page: currentPage, pageSize }));
+  }, [dispatch, search, stageFilter, currentPage, pageSize]);
 
   // Monitor candidates state changes
   useEffect(() => {
@@ -248,23 +250,10 @@ const CandidatesPage: React.FC = () => {
     }
   };
 
-  const filteredCandidates = useMemo(() => {
-    if (!candidates || !Array.isArray(candidates) || candidates.length === 0) {
-      return [];
-    }
-    return candidates.filter(candidate => {
-      const matchesSearch = candidate.name.toLowerCase().includes(search.toLowerCase()) ||
-        candidate.email.toLowerCase().includes(search.toLowerCase());
-      const matchesStage = stageFilter === 'all' || candidate.stage === stageFilter;
-      return matchesSearch && matchesStage;
-    });
-  }, [candidates, search, stageFilter]);
-
-  // Pagination calculations
-  const totalPages = Math.ceil(filteredCandidates.length / pageSize);
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const paginatedCandidates = filteredCandidates.slice(startIndex, endIndex);
+  const total = useAppSelector(s => s.candidates.total) || 0;
+  const filteredCandidates = candidates; // already filtered/paginated by API
+  const paginatedCandidates = candidates; // items are current page from API
+  const totalPages = Math.ceil(total / pageSize);
 
   // Reset to first page when filters change
   useEffect(() => {
@@ -272,12 +261,12 @@ const CandidatesPage: React.FC = () => {
   }, [search, stageFilter]);
 
   const candidatesByStage = {
-    applied: filteredCandidates.filter(c => c.stage === 'applied'),
-    screen: filteredCandidates.filter(c => c.stage === 'screen'),
-    tech: filteredCandidates.filter(c => c.stage === 'tech'),
-    offer: filteredCandidates.filter(c => c.stage === 'offer'),
-    hired: filteredCandidates.filter(c => c.stage === 'hired'),
-    rejected: filteredCandidates.filter(c => c.stage === 'rejected'),
+    applied: candidates.filter(c => c.stage === 'applied'),
+    screen: candidates.filter(c => c.stage === 'screen'),
+    tech: candidates.filter(c => c.stage === 'tech'),
+    offer: candidates.filter(c => c.stage === 'offer'),
+    hired: candidates.filter(c => c.stage === 'hired'),
+    rejected: candidates.filter(c => c.stage === 'rejected'),
   };
 
   if (loading) return <div className="loading">Loading candidates...</div>;
@@ -319,10 +308,22 @@ const CandidatesPage: React.FC = () => {
           <input
             type="text"
             placeholder="Search candidates by name or email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                setSearch(searchInput);
+                setCurrentPage(1);
+              }
+            }}
             className="candidates-search"
           />
+          <button
+            className="view-btn"
+            onClick={() => { setSearch(searchInput); setCurrentPage(1); }}
+          >
+            Search
+          </button>
           <select
             value={stageFilter}
             onChange={(e) => setStageFilter(e.target.value)}
@@ -362,52 +363,16 @@ const CandidatesPage: React.FC = () => {
         ) : (
           <div className="candidates-list-container">
             <div className="list-header">
-              <span className="candidate-count">
-                {filteredCandidates.length} candidate{filteredCandidates.length !== 1 ? 's' : ''}
-              </span>
+              <span className="candidate-count">{total} total</span>
               <span className="performance-note">
-                📋 Regular list (virtualization temporarily disabled for debugging)
+                ⚡ Virtualized list
               </span>
             </div>
-            <div className="candidates-list">
-              {filteredCandidates.length === 0 ? (
-                <div className="empty-state">
-                  <div className="empty-icon">👥</div>
-                  <h3 className="empty-title">No candidates found</h3>
-                  <p className="empty-message">
-                    Try adjusting your search or filters, or generate sample data
-                  </p>
-                </div>
-              ) : (
-                paginatedCandidates.map((candidate) => (
-                  <div key={candidate.id} className="candidate-item">
-                    <div className="candidate-info">
-                      <Link to={`/candidates/${candidate.id}`} className="candidate-name">
-                        {candidate.name}
-                      </Link>
-                      <p className="candidate-email">{candidate.email}</p>
-                      <span className={`candidate-stage ${candidate.stage}`}>
-                        {candidate.stage}
-                      </span>
-                    </div>
-                    <div className="candidate-actions">
-                      <button 
-                        className="action-btn"
-                        onClick={() => handleViewProfile(candidate)}
-                      >
-                        View
-                      </button>
-                      <button 
-                        className="action-btn"
-                        onClick={() => handleAddNote(candidate)}
-                      >
-                        Note
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+            <VirtualizedCandidateList
+              candidates={paginatedCandidates}
+              onViewProfile={handleViewProfile}
+              onAddNote={handleAddNote}
+            />
           </div>
         )
       ) : (
@@ -447,13 +412,13 @@ const CandidatesPage: React.FC = () => {
       )}
 
       {/* Pagination for List View */}
-      {view === 'list' && filteredCandidates.length > 0 && (
+      {view === 'list' && total > 0 && (
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
           pageSize={pageSize}
-          totalItems={filteredCandidates.length}
+          totalItems={total}
           onPageSizeChange={(newSize) => {
             setPageSize(newSize);
             setCurrentPage(1);

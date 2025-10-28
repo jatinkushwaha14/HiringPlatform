@@ -1,6 +1,6 @@
 import { http, HttpResponse, delay } from 'msw';
 import { db } from '../services/database';
-import type { Job } from '../types';
+import type { Job, Candidate } from '../types';
 
 function randomLatency() {
   return 200 + Math.floor(Math.random() * 1000); // 200–1200ms
@@ -161,23 +161,58 @@ export const handlers = [
   }),
 
   // Candidates API
-  http.get('/api/candidates', async () => {
-    await delay(400);
-    return HttpResponse.json({
-      success: true,
-      data: [],
-      message: 'Candidates fetched successfully'
-    });
+  http.get('/api/candidates', async ({ request }) => {
+    await delay(randomLatency());
+    const url = new URL(request.url);
+    const search = (url.searchParams.get('search') || '').toLowerCase();
+    const stage = url.searchParams.get('stage') || '';
+    const page = Number(url.searchParams.get('page') || '1');
+    const pageSize = Number(url.searchParams.get('pageSize') || '25');
+
+    let items = await db.candidates.toArray();
+    if (search) {
+      items = items.filter(c =>
+        c.name.toLowerCase().includes(search) ||
+        c.email.toLowerCase().includes(search)
+      );
+    }
+    if (stage && stage !== 'all') {
+      items = items.filter(c => c.stage === stage);
+    }
+    const total = items.length;
+    const start = (page - 1) * pageSize;
+    const end = start + pageSize;
+    const paged = items.slice(start, end);
+
+    return HttpResponse.json({ success: true, data: { items: paged, total, page, pageSize }, message: 'Candidates fetched successfully' });
   }),
 
   http.put('/api/candidates/:id/stage', async ({ request, params }) => {
-    const body = await request.json();
-    await delay(300);
-    return HttpResponse.json({
-      success: true,
-      data: { id: params.id, stage: body },
-      message: 'Candidate stage updated successfully'
-    });
+    await delay(randomLatency());
+    if (maybeFailWrite()) {
+      return HttpResponse.json({ success: false, message: 'Random write failure' }, { status: 500 });
+    }
+    const id = params.id as string;
+    const { stage } = (await request.json()) as { stage: Candidate['stage'] };
+    const now = new Date().toISOString();
+    await db.candidates.update(id, { stage, updatedAt: now });
+    // append timeline event
+    const timelineKey = `timeline:${id}`;
+    const existingRaw = localStorage.getItem(timelineKey);
+    const existing = existingRaw ? JSON.parse(existingRaw) as Array<{ type: string; at: string; stage?: string }> : [];
+    existing.unshift({ type: 'stage_change', at: now, stage });
+    localStorage.setItem(timelineKey, JSON.stringify(existing.slice(0, 100)));
+    return HttpResponse.json({ success: true, data: { id, stage }, message: 'Candidate stage updated successfully' });
+  }),
+
+  // Candidate timeline API (frontend-only via localStorage)
+  http.get('/api/candidates/:id/timeline', async ({ params }) => {
+    await delay(randomLatency());
+    const id = params.id as string;
+    const timelineKey = `timeline:${id}`;
+    const existingRaw = localStorage.getItem(timelineKey);
+    const items = existingRaw ? JSON.parse(existingRaw) as Array<{ type: string; at: string; stage?: string }> : [];
+    return HttpResponse.json({ success: true, data: items, message: 'Timeline fetched' });
   }),
 
   // Assessments API

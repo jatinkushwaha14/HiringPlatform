@@ -1,46 +1,40 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { Candidate } from '../../types';
-import { db } from '../../services/database';
+import { candidatesApi } from '../../services/api';
 
 interface CandidatesState {
   candidates: Candidate[];
   loading: boolean;
   error: string | null;
+  total: number;
+  page: number;
+  pageSize: number;
 }
 
 const initialState: CandidatesState = {
   candidates: [],
   loading: false,
   error: null,
+  total: 0,
+  page: 1,
+  pageSize: 25,
 };
 
 export const fetchCandidates = createAsyncThunk(
   'candidates/fetchCandidates',
-  async (params: { search?: string; stage?: string; page?: number } = {}) => {
-    let candidates = await db.candidates.toArray();
-    
-    if (params.search) {
-      candidates = candidates.filter(candidate => 
-        candidate.name.toLowerCase().includes(params.search!.toLowerCase()) ||
-        candidate.email.toLowerCase().includes(params.search!.toLowerCase())
-      );
-    }
-    
-    if (params.stage) {
-      candidates = candidates.filter(candidate => candidate.stage === params.stage);
-    }
-    
-    return candidates;
+  async (params: { search?: string; stage?: string; page?: number; pageSize?: number } = {}) => {
+    const res = await candidatesApi.list(params);
+    return res.data; // { items, total, page, pageSize }
   }
 );
 
 export const updateCandidateStage = createAsyncThunk(
-    'candidates/updateCandidateStage',
-    async ({ id, stage }: { id: string; stage: 'applied' | 'screen' | 'tech' | 'offer' | 'hired' | 'rejected' }) => {
-      await db.candidates.update(id, { stage, updatedAt: new Date().toISOString() });
-      return { id, stage };
-    }
-  );
+  'candidates/updateCandidateStage',
+  async ({ id, stage }: { id: string; stage: Candidate['stage'] }) => {
+    const res = await candidatesApi.updateStage(id, stage);
+    return res.data as { id: string; stage: Candidate['stage'] };
+  }
+);
 
 const candidatesSlice = createSlice({
   name: 'candidates',
@@ -58,7 +52,10 @@ const candidatesSlice = createSlice({
       })
       .addCase(fetchCandidates.fulfilled, (state, action) => {
         state.loading = false;
-        state.candidates = action.payload;
+        state.candidates = action.payload.items as Candidate[];
+        state.total = action.payload.total as number;
+        state.page = action.payload.page as number;
+        state.pageSize = action.payload.pageSize as number;
       })
       .addCase(fetchCandidates.rejected, (state, action) => {
         state.loading = false;

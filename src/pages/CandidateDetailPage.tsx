@@ -7,6 +7,7 @@ import MentionInput from '../components/UI/MentionInput';
 import MentionDisplay from '../components/UI/MentionDisplay';
 import type { Candidate } from '../types';
 import './CandidateDetailPage.css';
+import { candidatesApi } from '../services/api';
 
 const CandidateDetailPage: React.FC = () => {
   const { candidateId } = useParams<{ candidateId: string }>();
@@ -17,6 +18,8 @@ const CandidateDetailPage: React.FC = () => {
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [noteText, setNoteText] = useState('');
   const [notes, setNotes] = useState<Array<{ id: string; text: string; createdAt: string }>>([]);
+  const [timeline, setTimeline] = useState<Array<{ type: string; at: string; stage?: string }>>([]);
+  const [timelineLoading, setTimelineLoading] = useState(false);
   
   // Mock team members for mentions
   const teamMembers = [
@@ -46,6 +49,23 @@ const CandidateDetailPage: React.FC = () => {
       dispatch(fetchJobs());
     }
   }, [dispatch, jobs.length]);
+
+  // Fetch persisted timeline events from the API (MSW) when candidateId changes
+  useEffect(() => {
+    const load = async () => {
+      if (!candidateId) return;
+      try {
+        setTimelineLoading(true);
+        const res = await candidatesApi.getTimeline(candidateId);
+        setTimeline(Array.isArray(res.data) ? res.data : []);
+      } catch (e) {
+        // keep silent; timeline optional
+      } finally {
+        setTimelineLoading(false);
+      }
+    };
+    load();
+  }, [candidateId]);
 
   const candidate = candidates.find(c => c.id === candidateId);
   const job = jobs.find(j => j.id === candidate?.jobId);
@@ -161,31 +181,45 @@ const CandidateDetailPage: React.FC = () => {
 
           <div className="candidate-timeline-section">
             <h2>Timeline</h2>
-            <div className="timeline">
-              <div className="timeline-item">
-                <div className="timeline-marker applied"></div>
-                <div className="timeline-content">
-                  <h4>Applied</h4>
-                  <p>Candidate applied for the position</p>
-                  <span className="timeline-date">
-                    {new Date(candidate.createdAt).toLocaleString()}
-                  </span>
-                </div>
-              </div>
-              
-              {candidate.stage !== 'applied' && (
+            {timelineLoading ? (
+              <div className="loading">Loading timeline…</div>
+            ) : (
+              <div className="timeline">
+                {/* Always include the initial applied event as anchor */}
                 <div className="timeline-item">
-                  <div className={`timeline-marker ${candidate.stage}`}></div>
+                  <div className="timeline-marker applied"></div>
                   <div className="timeline-content">
-                    <h4>Moved to {candidate.stage}</h4>
-                    <p>Candidate progressed to {candidate.stage} stage</p>
+                    <h4>Applied</h4>
+                    <p>Candidate applied for the position</p>
                     <span className="timeline-date">
-                      {new Date(candidate.updatedAt).toLocaleString()}
+                      {new Date(candidate.createdAt).toLocaleString()}
                     </span>
                   </div>
                 </div>
-              )}
-            </div>
+
+                {/* Render persisted stage change events if any */}
+                {timeline.map((evt, idx) => (
+                  <div key={`${evt.at}-${idx}`} className="timeline-item">
+                    <div className={`timeline-marker ${evt.stage || ''}`}></div>
+                    <div className="timeline-content">
+                      <h4>
+                        {evt.type === 'stage_change' && evt.stage
+                          ? `Moved to ${evt.stage}`
+                          : 'Update'}
+                      </h4>
+                      <p>
+                        {evt.type === 'stage_change' && evt.stage
+                          ? `Candidate progressed to ${evt.stage} stage`
+                          : 'Timeline event'}
+                      </p>
+                      <span className="timeline-date">
+                        {new Date(evt.at).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="candidate-notes-section">

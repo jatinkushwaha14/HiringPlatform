@@ -1,6 +1,6 @@
 import { http, HttpResponse, delay } from 'msw';
 import { db } from '../services/database';
-import type { Job, Candidate } from '../types';
+import type { Job, Candidate, Assessment, AssessmentResponse } from '../types';
 
 function randomLatency() {
   return 200 + Math.floor(Math.random() * 1000); // 200–1200ms
@@ -216,52 +216,60 @@ export const handlers = [
   }),
 
   // Assessments API
-  http.get('/api/assessments', async () => {
-    await delay(350);
-    return HttpResponse.json({
-      success: true,
-      data: [],
-      message: 'Assessments fetched successfully'
-    });
+  http.get('/api/assessments', async ({ request }) => {
+    await delay(randomLatency());
+    const url = new URL(request.url);
+    const jobId = url.searchParams.get('jobId');
+    const items = jobId
+      ? await db.assessments.where('jobId').equals(jobId).toArray()
+      : await db.assessments.toArray();
+    return HttpResponse.json({ success: true, data: items, message: 'Assessments fetched successfully' });
   }),
 
   http.post('/api/assessments', async ({ request }) => {
+    await delay(randomLatency());
+    if (maybeFailWrite()) return HttpResponse.json({ success: false, message: 'Random write failure' }, { status: 500 });
     const body = await request.json();
-    await delay(600);
-    return HttpResponse.json({
-      success: true,
-      data: { id: Date.now(), ...(body as object) },
-      message: 'Assessment created successfully'
-    });
+    const now = new Date().toISOString();
+    const assessment = { id: crypto.randomUUID(), createdAt: now, updatedAt: now, ...(body as object) } as Assessment;
+    await db.assessments.add(assessment as Assessment);
+    return HttpResponse.json({ success: true, data: assessment, message: 'Assessment created successfully' });
   }),
 
   http.put('/api/assessments/:id', async ({ request, params }) => {
+    await delay(randomLatency());
+    if (maybeFailWrite()) return HttpResponse.json({ success: false, message: 'Random write failure' }, { status: 500 });
     const body = await request.json();
-    await delay(500);
-    return HttpResponse.json({
-      success: true,
-      data: { id: params.id, ...(body as object) },
-      message: 'Assessment updated successfully'
-    });
+    const id = params.id as string;
+    const updated = { ...(body as object), updatedAt: new Date().toISOString() };
+    await db.assessments.update(id, updated);
+    const saved = await db.assessments.get(id);
+    if (!saved) return HttpResponse.json({ success: false, message: 'Assessment not found' }, { status: 404 });
+    return HttpResponse.json({ success: true, data: saved, message: 'Assessment updated successfully' });
   }),
 
-  http.delete('/api/assessments/:id', async () => {
-    await delay(300);
-    return HttpResponse.json({
-      success: true,
-      message: 'Assessment deleted successfully'
-    });
+  http.delete('/api/assessments/:id', async ({ params }) => {
+    await delay(randomLatency());
+    if (maybeFailWrite()) return HttpResponse.json({ success: false, message: 'Random write failure' }, { status: 500 });
+    const id = params.id as string;
+    await db.assessments.delete(id);
+    return HttpResponse.json({ success: true, data: null, message: 'Assessment deleted successfully' });
   }),
 
-  // Assessment Responses API
-  http.post('/api/assessments/:id/responses', async ({ request, params }) => {
-    const body = await request.json();
-    await delay(800);
-    return HttpResponse.json({
-      success: true,
-      data: { id: Date.now(), assessmentId: params.id, ...(body as object) },
-      message: 'Assessment response submitted successfully'
-    });
+  // Assessment Responses API (submit via jobId as per spec)
+  http.post('/api/assessments/:jobId/submit', async ({ request }) => {
+    await delay(randomLatency());
+    if (maybeFailWrite()) return HttpResponse.json({ success: false, message: 'Random write failure' }, { status: 500 });
+    const body = (await request.json()) as { assessmentId: string; candidateId: string; responses: Record<string, unknown> };
+    const response: AssessmentResponse = {
+      id: crypto.randomUUID(),
+      assessmentId: body.assessmentId,
+      candidateId: body.candidateId,
+      responses: body.responses as Record<string, unknown>,
+      submittedAt: new Date().toISOString(),
+    };
+    await db.assessmentResponses.put(response as AssessmentResponse);
+    return HttpResponse.json({ success: true, data: response, message: 'Assessment response submitted successfully' });
   }),
 
   // Error simulation (10% chance)

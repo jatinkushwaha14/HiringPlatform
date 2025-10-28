@@ -123,8 +123,9 @@ export const candidatesApi = {
 
 // Assessments API
 export const assessmentsApi = {
-  async getAll(): Promise<ApiResponse<any[]>> {
-    return apiRequest('/assessments');
+  async list(jobId?: string): Promise<ApiResponse<any[]>> {
+    const query = jobId ? `?jobId=${encodeURIComponent(jobId)}` : '';
+    return apiRequest(`/assessments${query}`);
   },
 
   async create(assessment: any): Promise<ApiResponse<any>> {
@@ -147,10 +148,7 @@ export const assessmentsApi = {
     });
   },
 
-  async submitResponse(assessmentId: string, response: any): Promise<ApiResponse<any>> {
-    return apiRequest(`/assessments/${assessmentId}/responses`, {
-      method: 'POST',
-      body: JSON.stringify(response),
-    });
+  async submitResponse(jobId: string, payload: { assessmentId: string; candidateId: string; responses: Record<string, any> }): Promise<ApiResponse<any>> {
+    return apiRequest(`/assessments/${jobId}/submit`, { method: 'POST', body: JSON.stringify(payload) });
   },
 };

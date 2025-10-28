@@ -1,5 +1,5 @@
 import { db } from './database';
-import type { Job, Candidate } from '../types';
+import type { Job, Candidate, Assessment } from '../types';
 
 // Generate random names for candidates
 const firstNames = ['John', 'Jane', 'Michael', 'Sarah', 'David', 'Emily', 'James', 'Jessica', 'Robert', 'Ashley', 'William', 'Amanda', 'Richard', 'Jennifer', 'Charles', 'Lisa', 'Joseph', 'Nancy', 'Thomas', 'Karen', 'Christopher', 'Betty', 'Daniel', 'Helen', 'Matthew', 'Sandra', 'Anthony', 'Donna', 'Mark', 'Carol', 'Donald', 'Ruth', 'Steven', 'Sharon', 'Paul', 'Michelle', 'Andrew', 'Laura', 'Joshua', 'Sarah', 'Kenneth', 'Kimberly', 'Kevin', 'Deborah', 'Brian', 'Dorothy', 'George', 'Lisa', 'Edward', 'Nancy', 'Ronald', 'Karen', 'Timothy', 'Betty', 'Jason', 'Helen', 'Jeffrey', 'Sandra', 'Ryan', 'Donna', 'Jacob', 'Carol', 'Gary', 'Ruth', 'Nicholas', 'Sharon', 'Eric', 'Michelle', 'Jonathan', 'Laura', 'Stephen', 'Sarah', 'Larry', 'Kimberly', 'Justin', 'Deborah', 'Scott', 'Dorothy', 'Brandon', 'Lisa', 'Benjamin', 'Nancy', 'Samuel', 'Karen', 'Gregory', 'Betty', 'Alexander', 'Helen', 'Patrick', 'Sandra', 'Jack', 'Donna', 'Dennis', 'Carol', 'Jerry', 'Ruth', 'Tyler', 'Sharon', 'Aaron', 'Michelle', 'Jose', 'Laura', 'Henry', 'Sarah', 'Adam', 'Kimberly', 'Douglas', 'Deborah', 'Nathan', 'Dorothy', 'Peter', 'Lisa', 'Zachary', 'Nancy', 'Kyle', 'Karen', 'Noah', 'Betty', 'Alan', 'Helen', 'Ethan', 'Sandra', 'Jeremy', 'Donna', 'Keith', 'Carol', 'Roger', 'Ruth', 'Terry', 'Sharon', 'Gerald', 'Michelle', 'Harold', 'Laura', 'Sean', 'Sarah', 'Christian', 'Kimberly', 'Arthur', 'Deborah', 'Austin', 'Dorothy', 'Noah', 'Lisa', 'Lawrence', 'Nancy', 'Jesse', 'Karen', 'Joe', 'Betty', 'Bryan', 'Helen', 'Billy', 'Sandra', 'Jordan', 'Donna', 'Albert', 'Carol', 'Dylan', 'Ruth', 'Bruce', 'Sharon', 'Willie', 'Michelle', 'Gabriel', 'Laura', 'Alan', 'Sarah', 'Juan', 'Kimberly', 'Wayne', 'Deborah', 'Roy', 'Dorothy', 'Ralph', 'Lisa', 'Randy', 'Nancy', 'Eugene', 'Karen', 'Vincent', 'Betty', 'Russell', 'Helen', 'Louis', 'Sandra', 'Philip', 'Donna', 'Bobby', 'Carol', 'Johnny', 'Ruth', 'Bradley', 'Sharon'];
@@ -105,6 +105,46 @@ export const seedDatabase = async () => {
 
     await db.candidates.bulkAdd(sampleCandidates);
     console.log('Added 1000 candidates to database');
+
+    // Seed at least 3 assessments with 10+ questions each for random jobs
+    const pickJobs = sampleJobs.slice(0, 3);
+    const assessments: Assessment[] = pickJobs.map((job, idx) => ({
+      id: `assessment-${idx + 1}`,
+      jobId: job.id,
+      title: `${job.title} Assessment`,
+      sections: [
+        {
+          id: `section-${idx + 1}-1`,
+          title: 'Core Skills',
+          questions: Array.from({ length: 6 }, (_, i) => ({
+            id: `q-${idx + 1}-1-${i + 1}`,
+            type: i % 2 === 0 ? 'single-choice' : 'multi-choice',
+            question: `Question ${i + 1} for ${job.title}`,
+            required: true,
+            options: ['A', 'B', 'C', 'D'],
+            correctAnswer: 'A',
+            correctAnswers: ['A', 'B'],
+          }))
+        },
+        {
+          id: `section-${idx + 1}-2`,
+          title: 'Practical',
+          questions: [
+            { id: `q-${idx + 1}-2-1`, type: 'short-text', question: 'Describe your experience.', required: true },
+            { id: `q-${idx + 1}-2-2`, type: 'long-text', question: 'Explain a complex project.', required: false, maxLength: 500 },
+            { id: `q-${idx + 1}-2-3`, type: 'numeric', question: 'Years of experience', required: true, min: 0, max: 40 },
+            { id: `q-${idx + 1}-2-4`, type: 'file-upload', question: 'Upload sample work (stub)', required: false },
+          ]
+        }
+      ],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }));
+
+    for (const a of assessments) {
+      await db.assessments.put(a);
+    }
+    console.log('Seeded 3 assessments with 10+ questions each');
     
   } catch (error) {
     console.error('Error seeding database:', error);

@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { AssessmentResponse } from '../../types';
 import { db } from '../../services/database';
+import { assessmentsApi } from '../../services/api';
 
 interface AssessmentResponsesState {
   responses: AssessmentResponse[];
@@ -97,16 +98,11 @@ export const submitAssessmentResponse = createAsyncThunk(
     candidateId: string; 
     responses: Record<string, any>; 
   }) => {
-    const responseData: AssessmentResponse = {
-      id: crypto.randomUUID(),
-      assessmentId,
-      candidateId,
-      responses,
-      submittedAt: new Date().toISOString(),
-    };
-
-    await db.assessmentResponses.put(responseData);
-    return responseData;
+    // Need jobId to submit to /assessments/:jobId/submit. Look up assessment.
+    const assessment = await db.assessments.get(assessmentId);
+    const jobId = assessment?.jobId || '';
+    const res = await assessmentsApi.submitResponse(jobId, { assessmentId, candidateId, responses });
+    return res.data as AssessmentResponse;
   }
 );
 

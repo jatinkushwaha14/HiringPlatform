@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import type { AssessmentSection, AssessmentQuestion } from '../../types';
 import QuestionEditor from './QuestionEditor';
 import './SectionManager.css';
+import { Button } from '@/shadcn/ui/button';
+import { Input } from '@/shadcn/ui/input';
 
 interface SectionManagerProps {
   section: AssessmentSection;
@@ -22,21 +24,20 @@ const SectionManager: React.FC<SectionManagerProps> = ({
 }) => {
   const [showAddQuestion, setShowAddQuestion] = useState(false);
 
-  const questionTypes: { type: AssessmentQuestion['type']; label: string; icon: string }[] = [
-    { type: 'single-choice', label: 'Single Choice', icon: '🔘' },
-    { type: 'multi-choice', label: 'Multiple Choice', icon: '☑️' },
-    { type: 'short-text', label: 'Short Text', icon: '📝' },
-    { type: 'long-text', label: 'Long Text', icon: '📄' },
-    { type: 'numeric', label: 'Numeric', icon: '🔢' },
-    { type: 'file-upload', label: 'File Upload', icon: '📎' }
+  const questionTypes: { type: AssessmentQuestion['type']; label: string }[] = [
+    { type: 'single-choice', label: 'Single Choice' },
+    { type: 'multi-choice', label: 'Multiple Choice' },
+    { type: 'short-text', label: 'Short Text' },
+    { type: 'long-text', label: 'Long Text' },
+    { type: 'numeric', label: 'Numeric' },
+    { type: 'file-upload', label: 'File Upload' }
   ];
 
   return (
     <div className="section-manager">
       <div className="section-header">
         <div className="section-title-section">
-          <input
-            type="text"
+          <Input
             value={section.title}
             onChange={(e) => onUpdateSection({ title: e.target.value })}
             className="section-title-input"
@@ -44,19 +45,22 @@ const SectionManager: React.FC<SectionManagerProps> = ({
           />
         </div>
         <div className="section-actions">
-          <button
+          <Button
             onClick={() => setShowAddQuestion(!showAddQuestion)}
             className="add-question-btn"
+            size="sm"
           >
-            + Add Question
-          </button>
-          <button
+            Add Question
+          </Button>
+          <Button
             onClick={onDeleteSection}
             className="delete-section-btn"
+            variant="destructive"
+            size="sm"
             title="Delete Section"
           >
-            🗑️
-          </button>
+            Delete
+          </Button>
         </div>
       </div>
 
@@ -64,7 +68,7 @@ const SectionManager: React.FC<SectionManagerProps> = ({
         <div className="question-type-selector">
           <h4>Choose Question Type:</h4>
           <div className="question-types-grid">
-            {questionTypes.map(({ type, label, icon }) => (
+            {questionTypes.map(({ type, label }) => (
               <button
                 key={type}
                 onClick={() => {
@@ -73,17 +77,18 @@ const SectionManager: React.FC<SectionManagerProps> = ({
                 }}
                 className="question-type-btn"
               >
-                <span className="question-type-icon">{icon}</span>
                 <span className="question-type-label">{label}</span>
               </button>
             ))}
           </div>
-          <button
+          <Button
             onClick={() => setShowAddQuestion(false)}
             className="cancel-btn"
+            variant="outline"
+            size="sm"
           >
             Cancel
-          </button>
+          </Button>
         </div>
       )}
 

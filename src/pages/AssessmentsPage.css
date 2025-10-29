@@ -160,11 +160,13 @@
 }
 
 .assessment-card {
-  background: white;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  padding: 20px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
   transition: box-shadow 0.2s;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .assessment-card:hover {
@@ -176,19 +178,21 @@
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 12px;
+  gap: 8px;
 }
 
 .assessment-header h4 {
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: var(--foreground);
   margin: 0;
+  word-break: break-word;
 }
 
 .assessment-job {
   font-size: 12px;
-  color: #007bff;
-  background: #e3f2fd;
+  color: var(--accent-foreground);
+  background: var(--accent);
   padding: 4px 8px;
   border-radius: 4px;
   margin: 4px 0;
@@ -197,16 +201,17 @@
 
 .assessment-date {
   font-size: 12px;
-  color: #666;
-  background: #f8f9fa;
+  color: var(--muted-foreground);
+  background: var(--muted);
   padding: 4px 8px;
   border-radius: 4px;
 }
 
 .assessment-stats {
   display: flex;
-  gap: 16px;
-  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-bottom: 12px;
 }
 
 .assessment-stats span {
@@ -218,19 +223,22 @@
 }
 
 .assessment-actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 8px;
+  width: 100%;
 }
 
 .edit-btn, .preview-btn, .take-btn, .responses-btn {
-  padding: 6px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: white;
-  color: #333;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--foreground);
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;
+  width: 100%;
 }
 
 .edit-btn:hover {
@@ -258,14 +266,15 @@
 }
 
 .delete-btn {
-  padding: 6px 12px;
+  padding: 8px 12px;
   border: 1px solid #dc3545;
-  border-radius: 4px;
-  background: white;
+  border-radius: 8px;
+  background: var(--card);
   color: #dc3545;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s;
+  width: 100%;
 }
 
 .delete-btn:hover {

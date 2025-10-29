@@ -8,9 +8,14 @@ import { createPortal } from 'react-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { fetchJobs, createJob, updateJob, reorderJob } from '../store/slices/jobsSlice';
 import JobForm from '../components/Jobs/JobForm';
-import Pagination from '../components/UI/Pagination';
+import Pagination from '../components/legacy-ui/Pagination';
 import type { Job } from '../types/index.ts';
 import './JobsPage.css';
+import { Button } from '@/shadcn/ui/button';
+import { Input } from '@/shadcn/ui/input';
+import { Badge } from '@/shadcn/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shadcn/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shadcn/ui/select';
 
 // Sortable Job Card Component
 const SortableJobCard: React.FC<{ job: Job; onEdit: (job: Job) => void; onArchive: (job: Job) => void }> = ({ job, onEdit, onArchive }) => {
@@ -30,65 +35,61 @@ const SortableJobCard: React.FC<{ job: Job; onEdit: (job: Job) => void; onArchiv
   };
 
   return (
-    <div
+    <Card
       ref={setNodeRef}
       style={style}
       className={`job-card ${job.status === 'archived' ? 'archived' : ''}`}
       {...attributes}
       {...listeners}
     >
-      <div className="job-content">
+      <CardHeader className="job-header">
+        <div className="job-header">
+          <Link to={`/jobs/${job.id}`} className="job-title-link">
+            <CardTitle className="job-title">{job.title}</CardTitle>
+          </Link>
+          <Badge variant={job.status === 'active' ? 'default' : 'secondary'} className={`job-status ${job.status}`}>
+            {job.status}
+          </Badge>
+        </div>
+        <p className="job-slug">#{job.slug}</p>
+      </CardHeader>
+      <CardContent className="job-content">
         <div className="job-info">
-          <div className="job-header">
-            <Link to={`/jobs/${job.id}`} className="job-title-link">
-              <h3 className="job-title">{job.title}</h3>
-            </Link>
-            <span className={`job-status ${job.status}`}>
-              {job.status}
-            </span>
-          </div>
-          
-          <p className="job-slug">
-            #{job.slug}
-          </p>
-          
           <div className="job-tags">
             {job.tags.map((tag, index) => (
-              <span key={index} className="job-tag">
+              <Badge key={index} variant="outline" className="job-tag">
                 {tag}
-              </span>
+              </Badge>
             ))}
           </div>
         </div>
-        
         <div className="job-actions">
           <div className="job-buttons">
-            <button
+            <Button
               onClick={(e) => {
                 e.stopPropagation();
                 onEdit(job);
               }}
-              className="job-btn"
+              variant="secondary"
+              size="sm"
             >
               Edit
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={(e) => {
                 e.stopPropagation();
                 onArchive(job);
               }}
-              className={`job-btn ${job.status === 'active' ? 'archive' : 'unarchive'}`}
+              variant={job.status === 'active' ? 'outline' : 'default'}
+              size="sm"
             >
               {job.status === 'active' ? 'Archive' : 'Unarchive'}
-            </button>
+            </Button>
           </div>
-          
-          <div className="job-order">
-            Order: {job.order}
-          </div>
+          <div className="job-order">Order: {job.order}</div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
@@ -217,7 +218,7 @@ const JobsPage: React.FC = () => {
       
       <div className="jobs-controls">
         <div className="jobs-filters">
-          <input
+          <Input
             type="text"
             placeholder="Search jobs by title or tags..."
             value={searchInput}
@@ -230,32 +231,36 @@ const JobsPage: React.FC = () => {
             }}
             className="jobs-search"
           />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="jobs-filter"
-          >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="archived">Archived</option>
-          </select>
-          <button
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v)}>
+            <SelectTrigger className="jobs-filter">
+              <SelectValue placeholder="All Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="archived">Archived</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
             onClick={() => {
               setSearch(searchInput);
               setCurrentPage(1);
             }}
             className="jobs-filter"
-            style={{ padding: '8px 12px' }}
+            size="sm"
           >
             Search
-          </button>
-          <input
+          </Button>
+          <Input
             type="text"
             placeholder="Filter by tags (comma-separated)"
             value={selectedTags.join(', ')}
             onChange={(e) => setSelectedTags(e.target.value.split(',').map(t => t.trim()).filter(Boolean))}
-            className="jobs-filter"
+            className="jobs-filter jobs-tags-input"
           />
+          <Button onClick={handleCreateJob} className="create-job-btn" size="sm">
+            + Create Job
+          </Button>
         </div>
         {loading && (
           <div style={{ fontSize: 12, color: '#666' }}>Loading…</div>
@@ -263,12 +268,6 @@ const JobsPage: React.FC = () => {
         {error && (
           <div style={{ fontSize: 12, color: '#b00020' }}>Error: {error}</div>
         )}
-        <button
-          onClick={handleCreateJob}
-          className="create-job-btn"
-        >
-          + Create Job
-        </button>
       </div>
 
       <DndContext
@@ -281,7 +280,7 @@ const JobsPage: React.FC = () => {
           <div className="jobs-list">
             {filteredJobs.length === 0 ? (
               <div className="empty-state">
-                <div className="empty-icon">📋</div>
+                <div className="empty-icon"></div>
                 <h3 className="empty-title">No jobs found</h3>
                 <p className="empty-message">
                   {search || statusFilter !== 'all' 

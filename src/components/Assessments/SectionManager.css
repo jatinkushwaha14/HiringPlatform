@@ -1,7 +1,7 @@
 .section-manager {
-  background: white;
+  background: var(--card);
   border-radius: 8px;
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--border);
   overflow: hidden;
   margin-bottom: 24px;
 }
@@ -11,8 +11,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
 }
 
 .section-title-section {
@@ -22,19 +22,19 @@
 .section-title-input {
   font-size: 20px;
   font-weight: 600;
-  color: #333;
-  border: 1px solid #ddd;
+  color: var(--foreground);
+  border: 1px solid var(--border);
   border-radius: 6px;
   padding: 8px 12px;
-  background: white;
+  background: var(--card);
   width: 100%;
   max-width: 400px;
 }
 
 .section-title-input:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px rgba(0,0,0,0);
 }
 
 .section-actions {
@@ -44,39 +44,39 @@
 }
 
 .add-question-btn {
-  background: #007bff;
-  color: white;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 6px;
-  font-weight: 500;
+  background: var(--card);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .add-question-btn:hover {
-  background: #0056b3;
+  background: var(--muted);
+  border-color: var(--ring);
 }
 
 .delete-section-btn {
-  background: #dc3545;
-  color: white;
-  border: none;
+  background: var(--card);
+  color: #b91c1c;
+  border: 1px solid #fecaca;
   padding: 8px 12px;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 16px;
-  transition: background-color 0.2s;
+  font-size: 14px;
 }
 
 .delete-section-btn:hover {
-  background: #c82333;
+  background: #fef2f2;
 }
 
 .question-type-selector {
   padding: 20px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
 }
 
 .question-type-selector h4 {
@@ -99,8 +99,8 @@
   align-items: center;
   gap: 6px;
   padding: 12px 8px;
-  background: white;
-  border: 1px solid #ddd;
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
@@ -108,10 +108,8 @@
 }
 
 .question-type-btn:hover {
-  border-color: #007bff;
-  background: #f8f9fa;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: var(--ring);
+  background: var(--muted);
 }
 
 .question-type-icon {

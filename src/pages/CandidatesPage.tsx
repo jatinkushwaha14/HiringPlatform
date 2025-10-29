@@ -1,16 +1,15 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragOverlay, useDroppable } from '@dnd-kit/core';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragOverlay, useDroppable, type DragStartEvent, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { createPortal } from 'react-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { fetchCandidates, updateCandidateStage } from '../store/slices/candidatesSlice';
-import { forceSeedDatabase } from '../services/seedData';
-import MentionInput from '../components/UI/MentionInput';
+import MentionInput from '../components/legacy-ui/MentionInput';
 import VirtualizedCandidateList from '../components/Candidates/VirtualizedCandidateList';
-import Pagination from '../components/UI/Pagination';
+import Pagination from '../components/legacy-ui/Pagination';
 import type { Candidate } from '../types';
 import './CandidatesPage.css';
 
@@ -119,7 +118,6 @@ const CandidatesPage: React.FC = () => {
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [noteText, setNoteText] = useState('');
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [isSeeding, setIsSeeding] = useState(false);
   const hasValidData = useRef(false);
   
   // Pagination state
@@ -153,33 +151,7 @@ const CandidatesPage: React.FC = () => {
     hasValidData.current = candidates && Array.isArray(candidates) && candidates.length > 0;
   }, [candidates]);
 
-  const handleSeedData = async () => {
-    console.log('Starting force seed...');
-    setIsSeeding(true);
-    try {
-      const success = await forceSeedDatabase();
-      if (success) {
-        console.log('Force seed completed, refreshing candidates...');
-        const result = await dispatch(fetchCandidates({}));
-        console.log('Fetch candidates result:', result);
-        console.log('Candidates from dispatch:', result.payload);
-        console.log('Current candidates state:', candidates);
-        
-        // Check if we got candidates from the dispatch
-        if (result.payload && Array.isArray(result.payload) && result.payload.length > 0) {
-          console.log('Successfully fetched candidates, state should update soon');
-        } else {
-          console.warn('No candidates returned from fetch');
-        }
-      } else {
-        console.error('Force seed failed');
-      }
-    } catch (error) {
-      console.error('Error during seeding:', error);
-    } finally {
-      setIsSeeding(false);
-    }
-  };
+  // Seeding removed; dataset expected to contain 1000 candidates
 
   const handleViewProfile = (candidate: Candidate) => {
     setSelectedCandidate(candidate);
@@ -201,30 +173,32 @@ const CandidatesPage: React.FC = () => {
     }
   };
 
-  const handleDragStart = (event: any) => {
-    setActiveId(event.active.id);
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(String(event.active.id));
   };
 
-  const handleDragEnd = async (event: any) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveId(null);
 
-    if (active.id !== over.id) {
-      const candidate = candidates.find(c => c.id === active.id);
+    if (over && active.id !== over.id) {
+      const activeIdStr = String(active.id);
+      const overIdStr = String(over.id);
+      const candidate = candidates.find(c => c.id === activeIdStr);
       
       // Find the stage by looking at which column the drop happened in
       let newStage = '';
-      if (over.id === 'applied' || candidatesByStage.applied.some(c => c.id === over.id)) {
+      if (overIdStr === 'applied' || candidatesByStage.applied.some(c => c.id === overIdStr)) {
         newStage = 'applied';
-      } else if (over.id === 'screen' || candidatesByStage.screen.some(c => c.id === over.id)) {
+      } else if (overIdStr === 'screen' || candidatesByStage.screen.some(c => c.id === overIdStr)) {
         newStage = 'screen';
-      } else if (over.id === 'tech' || candidatesByStage.tech.some(c => c.id === over.id)) {
+      } else if (overIdStr === 'tech' || candidatesByStage.tech.some(c => c.id === overIdStr)) {
         newStage = 'tech';
-      } else if (over.id === 'offer' || candidatesByStage.offer.some(c => c.id === over.id)) {
+      } else if (overIdStr === 'offer' || candidatesByStage.offer.some(c => c.id === overIdStr)) {
         newStage = 'offer';
-      } else if (over.id === 'hired' || candidatesByStage.hired.some(c => c.id === over.id)) {
+      } else if (overIdStr === 'hired' || candidatesByStage.hired.some(c => c.id === overIdStr)) {
         newStage = 'hired';
-      } else if (over.id === 'rejected' || candidatesByStage.rejected.some(c => c.id === over.id)) {
+      } else if (overIdStr === 'rejected' || candidatesByStage.rejected.some(c => c.id === overIdStr)) {
         newStage = 'rejected';
       }
 
@@ -251,9 +225,15 @@ const CandidatesPage: React.FC = () => {
   };
 
   const total = useAppSelector(s => s.candidates.total) || 0;
-  const filteredCandidates = candidates; // already filtered/paginated by API
   const paginatedCandidates = candidates; // items are current page from API
-  const totalPages = Math.ceil(total / pageSize);
+  const totalPages = Math.max(1, Math.ceil(Math.max(1, total) / Math.max(1, pageSize)));
+
+  // Clamp current page when total changes (e.g., filter/search)
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages]);
 
   // Reset to first page when filters change
   useEffect(() => {
@@ -280,27 +260,7 @@ const CandidatesPage: React.FC = () => {
         <p className="candidates-subtitle">
           Manage candidate applications and track their progress
         </p>
-        <div style={{ marginTop: '16px' }}>
-          <button
-            onClick={handleSeedData}
-            disabled={isSeeding}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: isSeeding ? '#6c757d' : '#28a745',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: isSeeding ? 'not-allowed' : 'pointer',
-              fontSize: '14px',
-              marginRight: '8px'
-            }}
-          >
-            {isSeeding ? 'Generating...' : 'Generate Sample Data (1000 candidates)'}
-          </button>
-          <span style={{ fontSize: '12px', color: '#666' }}>
-            Current: {candidates.length} candidates
-          </span>
-        </div>
+        <div style={{ marginTop: '16px', fontSize: '12px', color: '#666' }}>Total loaded: {total} candidates</div>
       </div>
       
       <div className="candidates-controls">
@@ -356,16 +316,19 @@ const CandidatesPage: React.FC = () => {
       </div>
 
       {view === 'list' ? (
-        (loading || isSeeding) ? (
+        loading ? (
           <div className="loading">
-            {isSeeding ? 'Generating sample data...' : 'Loading candidates...'}
+            Loading candidates...
           </div>
         ) : (
           <div className="candidates-list-container">
             <div className="list-header">
-              <span className="candidate-count">{total} total</span>
-              <span className="performance-note">
-                ⚡ Virtualized list
+              <span className="candidate-count">
+                {(() => {
+                  const start = (currentPage - 1) * pageSize + 1;
+                  const end = Math.min(currentPage * pageSize, total);
+                  return total > 0 ? `Showing ${start}-${end} of ${total}` : 'No results';
+                })()}
               </span>
             </div>
             <VirtualizedCandidateList
@@ -423,6 +386,7 @@ const CandidatesPage: React.FC = () => {
             setPageSize(newSize);
             setCurrentPage(1);
           }}
+          pageSizeOptions={[25, 50, 100, 250, 500, 1000]}
         />
       )}
 

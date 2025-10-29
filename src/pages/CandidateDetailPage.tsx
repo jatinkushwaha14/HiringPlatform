@@ -3,8 +3,8 @@ import { useParams, Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { fetchCandidates, updateCandidateStage } from '../store/slices/candidatesSlice';
 import { fetchJobs } from '../store/slices/jobsSlice';
-import MentionInput from '../components/UI/MentionInput';
-import MentionDisplay from '../components/UI/MentionDisplay';
+import MentionInput from '../components/legacy-ui/MentionInput';
+import MentionDisplay from '../components/legacy-ui/MentionDisplay';
 import type { Candidate } from '../types';
 import './CandidateDetailPage.css';
 import { candidatesApi } from '../services/api';
@@ -28,6 +28,20 @@ const CandidateDetailPage: React.FC = () => {
   ];
 
   // No sample notes - start with empty notes
+  // Load per-candidate notes from localStorage when candidate changes
+  useEffect(() => {
+    if (!candidateId) {
+      setNotes([]);
+      return;
+    }
+    try {
+      const stored = localStorage.getItem(`notes:${candidateId}`);
+      const parsed = stored ? JSON.parse(stored) as Array<{ id: string; text: string; createdAt: string }> : [];
+      setNotes(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      setNotes([]);
+    }
+  }, [candidateId]);
 
   useEffect(() => {
     // Keep trying to fetch candidates until we get some
@@ -46,7 +60,7 @@ const CandidateDetailPage: React.FC = () => {
 
   useEffect(() => {
     if (jobs.length === 0) {
-      dispatch(fetchJobs());
+      dispatch(fetchJobs({}));
     }
   }, [dispatch, jobs.length]);
 
@@ -58,7 +72,7 @@ const CandidateDetailPage: React.FC = () => {
         setTimelineLoading(true);
         const res = await candidatesApi.getTimeline(candidateId);
         setTimeline(Array.isArray(res.data) ? res.data : []);
-      } catch (e) {
+      } catch {
         // keep silent; timeline optional
       } finally {
         setTimelineLoading(false);
@@ -94,14 +108,32 @@ const CandidateDetailPage: React.FC = () => {
         text: noteText,
         createdAt: new Date().toISOString()
       };
-      setNotes(prev => [newNote, ...prev]);
+      setNotes(prev => {
+        const updated = [newNote, ...prev];
+        try {
+          localStorage.setItem(`notes:${candidate.id}`, JSON.stringify(updated.slice(0, 500)));
+        } catch {
+          /* noop */
+        }
+        return updated;
+      });
       setNoteText('');
       setShowNoteModal(false);
     }
   };
 
   const handleDeleteNote = (noteId: string) => {
-    setNotes(prev => prev.filter(note => note.id !== noteId));
+    setNotes(prev => {
+      const updated = prev.filter(note => note.id !== noteId);
+      if (candidate) {
+        try {
+          localStorage.setItem(`notes:${candidate.id}`, JSON.stringify(updated));
+        } catch {
+          /* noop */
+        }
+      }
+      return updated;
+    });
   };
 
   if (loading) return <div className="loading">Loading candidate details...</div>;

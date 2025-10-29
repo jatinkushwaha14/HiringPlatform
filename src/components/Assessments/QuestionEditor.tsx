@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { AssessmentQuestion } from '../../types';
 import './QuestionEditor.css';
+import { Button } from '@/shadcn/ui/button';
 
 interface QuestionEditorProps {
   question: AssessmentQuestion;
@@ -63,17 +64,7 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
     return question.question.trim() !== '' && hasCorrectAnswer();
   };
 
-  const getQuestionTypeIcon = (type: AssessmentQuestion['type']) => {
-    const icons = {
-      'single-choice': '🔘',
-      'multi-choice': '☑️',
-      'short-text': '📝',
-      'long-text': '📄',
-      'numeric': '🔢',
-      'file-upload': '📎'
-    };
-    return icons[type] || '❓';
-  };
+  // Icons removed to keep UI clean and consistent
 
   const getQuestionTypeLabel = (type: AssessmentQuestion['type']) => {
     const labels = {
@@ -92,7 +83,6 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
       <div className="question-header" onClick={() => setIsExpanded(!isExpanded)}>
         <div className="question-info">
           <span className="question-number">Q{questionNumber}</span>
-          <span className="question-type-icon">{getQuestionTypeIcon(question.type)}</span>
           <span className="question-type-label">{getQuestionTypeLabel(question.type)}</span>
           {question.question && (
             <span className="question-preview">
@@ -112,19 +102,21 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
             </span>
           )}
           {isQuestionValid() && (
-            <span className="validation-success">✓ Valid</span>
+            <span className="validation-success">Valid</span>
           )}
           <span className="required-indicator">{question.required ? 'Required' : 'Optional'}</span>
-          <button
+          <Button
             onClick={(e) => {
               e.stopPropagation();
               onDeleteQuestion();
             }}
             className="delete-question-btn"
             title="Delete Question"
+            variant="destructive"
+            size="sm"
           >
-            🗑️
-          </button>
+            Delete
+          </Button>
         </div>
       </div>
 

@@ -7,7 +7,6 @@ import { fetchAssessmentResponses } from '../store/slices/assessmentResponsesSli
 import AssessmentBuilder from '../components/Assessments/AssessmentBuilder';
 import AssessmentTaker from '../components/Assessments/AssessmentTaker';
 import AssessmentResults from '../components/Assessments/AssessmentResults';
-import LivePreview from '../components/Assessments/LivePreview';
 import type { Assessment, AssessmentResponse } from '../types';
 import './AssessmentsPage.css';
 
@@ -21,7 +20,7 @@ const AssessmentsPage: React.FC = () => {
   const [selectedJobId, setSelectedJobId] = useState<string>('');
   const [showBuilder, setShowBuilder] = useState(false);
   const [editingAssessment, setEditingAssessment] = useState<Assessment | null>(null);
-  const [previewAssessment, setPreviewAssessment] = useState<Assessment | null>(null);
+  // Preview removed
   const [showAllAssessments, setShowAllAssessments] = useState(false);
   const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
   const [selectedCandidate, setSelectedCandidate] = useState<string>('');
@@ -31,7 +30,7 @@ const AssessmentsPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<'manage' | 'responses'>('manage');
 
   useEffect(() => {
-    dispatch(fetchJobs());
+    dispatch(fetchJobs({}));
     dispatch(fetchCandidates({}));
   }, [dispatch]);
 
@@ -85,9 +84,7 @@ const AssessmentsPage: React.FC = () => {
     setShowBuilder(true);
   };
 
-  const handlePreviewAssessment = (assessment: Assessment) => {
-    setPreviewAssessment(assessment);
-  };
+  // Preview removed
 
   const handleDeleteAssessment = async (assessment: Assessment) => {
     if (window.confirm(`Are you sure you want to delete "${assessment.title}"? This action cannot be undone.`)) {
@@ -271,12 +268,7 @@ const AssessmentsPage: React.FC = () => {
                           >
                             Edit
                           </button>
-                          <button
-                            onClick={() => handlePreviewAssessment(assessment)}
-                            className="preview-btn"
-                          >
-                            Preview
-                          </button>
+                          
                           <button
                             onClick={() => handleTakeAssessment(assessment)}
                             className="take-btn"
@@ -362,24 +354,7 @@ const AssessmentsPage: React.FC = () => {
         />
       )}
 
-      {previewAssessment && (
-        <div className="preview-modal-overlay">
-          <div className="preview-modal">
-            <div className="preview-modal-header">
-              <h2>Assessment Preview: {previewAssessment.title}</h2>
-              <button
-                onClick={() => setPreviewAssessment(null)}
-                className="preview-close-btn"
-              >
-                ×
-              </button>
-            </div>
-            <div className="preview-modal-content">
-              <LivePreview assessment={previewAssessment} />
-            </div>
-          </div>
-        </div>
-      )}
+      
 
       {showTaker && selectedAssessment && (
         <div className="taker-modal-overlay">

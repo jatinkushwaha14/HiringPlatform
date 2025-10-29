@@ -19,7 +19,7 @@ const JobDetailPage: React.FC = () => {
 
   useEffect(() => {
     if (jobs.length === 0) {
-      dispatch(fetchJobs());
+      dispatch(fetchJobs({}));
     }
   }, [dispatch, jobs.length]);
 
@@ -170,9 +170,6 @@ const JobDetailPage: React.FC = () => {
                   <div className="list-header">
                     <span className="candidate-count">
                       {jobCandidates.length} candidate{jobCandidates.length !== 1 ? 's' : ''} applied
-                    </span>
-                    <span className="performance-note">
-                      📋 Regular list (virtualization available for large lists)
                     </span>
                   </div>
                   <div className="job-candidates-container">

@@ -5,9 +5,15 @@ import App from './App.tsx'
 import './services/seedData'
 
 async function start() {
-  if (import.meta.env.DEV) {
+  // Ensure MSW runs in dev and preview builds so API calls return JSON
+  try {
     const { worker } = await import('./mocks/browser');
-    await worker.start({ onUnhandledRequest: 'bypass' });
+    await worker.start({
+      onUnhandledRequest: 'bypass',
+      serviceWorker: { url: '/mockServiceWorker.js' },
+    });
+  } catch (e) {
+    // If MSW is not available (SSR or build without mocks), continue
   }
 
   createRoot(document.getElementById('root')!).render(

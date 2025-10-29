@@ -1,0 +1,19 @@
+.mention-display {
+  display: inline;
+}
+
+.mention-tag {
+  color: #2563eb;
+  text-decoration: none;
+  padding: 0 2px;
+}
+
+.mention-tag:hover {
+  text-decoration: underline;
+}
+
+.mention-text {
+  white-space: pre-wrap;
+}
+
+

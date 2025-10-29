@@ -94,15 +94,6 @@ const VirtualizedCandidateList: React.FC<VirtualizedCandidateListProps> = ({
 
   return (
     <div className="virtualized-candidate-list">
-      <div className="list-header">
-        <span className="candidate-count">
-          Showing {safeCandidates.length} candidate{safeCandidates.length !== 1 ? 's' : ''}
-        </span>
-        <span className="performance-note">
-          ⚡ Optimized performance
-        </span>
-      </div>
-      
       <div className="candidate-list-container">
         {safeCandidates.map((candidate, index) => (
           <CandidateItem 

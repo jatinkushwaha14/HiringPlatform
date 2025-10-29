@@ -3,8 +3,11 @@ import { useAppDispatch } from '../../hooks/redux';
 import { updateAssessment } from '../../store/slices/assessmentsSlice';
 import type { Assessment, AssessmentSection, AssessmentQuestion } from '../../types';
 import SectionManager from './SectionManager';
-import LivePreview from './LivePreview';
 import './AssessmentBuilder.css';
+import { Button } from '@/shadcn/ui/button';
+import { Input } from '@/shadcn/ui/input';
+import { Badge } from '@/shadcn/ui/badge';
+import { X } from 'lucide-react';
 
 interface AssessmentBuilderProps {
   assessment: Assessment;
@@ -69,6 +72,11 @@ const AssessmentBuilder: React.FC<AssessmentBuilderProps> = ({ assessment, onClo
   };
 
   const handleSaveAssessment = async () => {
+    const totalQuestions = localAssessment.sections.reduce((sum, s) => sum + s.questions.length, 0);
+    if (totalQuestions === 0) {
+      alert('Add at least one question before saving the assessment.');
+      return;
+    }
     // Validate before saving
     const invalidQuestions = validateAssessment();
     
@@ -170,8 +178,7 @@ const AssessmentBuilder: React.FC<AssessmentBuilderProps> = ({ assessment, onClo
         <div className="builder-header">
           <div className="builder-title">
             <h2>Assessment Builder</h2>
-            <input
-              type="text"
+            <Input
               value={localAssessment.title}
               onChange={(e) => handleUpdateAssessment({ title: e.target.value })}
               className="assessment-title-input"
@@ -180,20 +187,21 @@ const AssessmentBuilder: React.FC<AssessmentBuilderProps> = ({ assessment, onClo
           </div>
           <div className="builder-actions">
             {validateAssessment().length > 0 && (
-              <span className="validation-status">
-                ⚠️ {validateAssessment().length} issue(s) to fix
-              </span>
+              <Badge variant="destructive" className="validation-status">
+                {validateAssessment().length} issue(s) to fix
+              </Badge>
             )}
-            <button 
-              onClick={handleSaveAssessment} 
+            <Button 
+              onClick={handleSaveAssessment}
+              variant={validateAssessment().length > 0 ? 'secondary' : 'default'}
               className={`save-btn ${validateAssessment().length > 0 ? 'disabled' : ''}`}
               disabled={validateAssessment().length > 0}
             >
-              💾 Save Changes
-            </button>
-            <button onClick={onClose} className="close-btn">
-              ×
-            </button>
+              Save Changes
+            </Button>
+            <Button onClick={onClose} variant="outline" className="close-btn" size="icon" aria-label="Close">
+              <X className="w-4 h-4" />
+            </Button>
           </div>
         </div>
 
@@ -235,10 +243,7 @@ const AssessmentBuilder: React.FC<AssessmentBuilderProps> = ({ assessment, onClo
             )}
           </div>
 
-          <div className="builder-preview">
-            <h3>Live Preview</h3>
-            <LivePreview assessment={localAssessment} />
-          </div>
+          {/* Live Preview removed per request */}
         </div>
       </div>
     </div>

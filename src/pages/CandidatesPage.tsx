@@ -233,7 +233,7 @@ const CandidatesPage: React.FC = () => {
     if (currentPage > totalPages) {
       setCurrentPage(totalPages);
     }
-  }, [totalPages]);
+  }, [currentPage, totalPages]);
 
   // Reset to first page when filters change
   useEffect(() => {

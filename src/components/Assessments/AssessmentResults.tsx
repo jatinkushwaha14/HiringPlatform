@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Assessment, AssessmentResponse } from '../../types';
+import type { Assessment, AssessmentResponse, AssessmentQuestion, AssessmentSection, QuestionResponseValue } from '../../types';
 import './AssessmentResults.css';
 
 interface AssessmentResultsProps {
@@ -13,16 +13,18 @@ const AssessmentResults: React.FC<AssessmentResultsProps> = ({
   response,
   candidateName
 }) => {
-  const getScoreForQuestion = (question: any, answer: any) => {
+  const getScoreForQuestion = (question: AssessmentQuestion, answer: QuestionResponseValue | undefined) => {
     // Simple scoring logic - in a real app, this would be more sophisticated
     if (!answer) return 0;
     
     switch (question.type) {
-      case 'single-choice':
+      case 'single-choice': {
+        const stringAnswer = typeof answer === 'string' ? answer : '';
         // If no correct answer is set, give partial credit for any answer
         if (!question.correctAnswer) return 0.5;
-        return answer === question.correctAnswer ? 1 : 0;
-      case 'multi-choice':
+        return stringAnswer === question.correctAnswer ? 1 : 0;
+      }
+      case 'multi-choice': {
         if (!Array.isArray(answer)) return 0;
         // If no correct answers are set, give partial credit for any answer
         if (!question.correctAnswers || question.correctAnswers.length === 0) {
@@ -32,17 +34,20 @@ const AssessmentResults: React.FC<AssessmentResultsProps> = ({
           answer.includes(correct)
         ).length;
         return correctCount / question.correctAnswers.length;
+      }
       case 'short-text':
-      case 'long-text':
+      case 'long-text': {
         // Improved scoring for text answers
-        const textLength = answer.toString().length;
+        const textAnswer = typeof answer === 'string' ? answer : String(answer);
+        const textLength = textAnswer.length;
         if (textLength === 0) return 0;
         if (textLength < 5) return 0.2; // Very short answers
         if (textLength < 10) return 0.5; // Short answers
         if (textLength < 20) return 0.7; // Medium answers
         return 1; // Good length answers get full points
-      case 'numeric':
-        const numAnswer = parseFloat(answer);
+      }
+      case 'numeric': {
+        const numAnswer = typeof answer === 'number' ? answer : parseFloat(String(answer));
         if (isNaN(numAnswer)) return 0;
         if (question.min !== undefined && question.max !== undefined) {
           const range = question.max - question.min;
@@ -50,14 +55,15 @@ const AssessmentResults: React.FC<AssessmentResultsProps> = ({
           return Math.max(0, Math.min(1, normalized));
         }
         return 1;
+      }
       default:
         return 1; // File uploads and other types get full points
     }
   };
 
-  const calculateSectionScore = (section: any) => {
+  const calculateSectionScore = (section: AssessmentSection) => {
     const questions = section.questions;
-    const totalScore = questions.reduce((sum: number, question: any) => {
+    const totalScore = questions.reduce((sum: number, question: AssessmentQuestion) => {
       const answer = response.responses[question.id];
       return sum + getScoreForQuestion(question, answer);
     }, 0);

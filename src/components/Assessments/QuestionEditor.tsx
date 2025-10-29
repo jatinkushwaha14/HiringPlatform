@@ -18,7 +18,7 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const handleQuestionChange = (field: keyof AssessmentQuestion, value: any) => {
+  const handleQuestionChange = (field: keyof AssessmentQuestion, value: string | string[] | number | boolean | AssessmentQuestion['conditionalLogic'] | undefined) => {
     onUpdateQuestion({ [field]: value });
   };
 
@@ -40,7 +40,7 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
     onUpdateQuestion({ options: newOptions });
   };
 
-  const handleCorrectAnswerChange = (value: any) => {
+  const handleCorrectAnswerChange = (value: string) => {
     onUpdateQuestion({ correctAnswer: value });
   };
 

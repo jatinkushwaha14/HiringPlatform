@@ -114,7 +114,7 @@ const AssessmentsPage: React.FC = () => {
     setShowResults(true);
   };
 
-  const handleAssessmentComplete = (_responseId: string) => {
+  const handleAssessmentComplete = () => {
     setShowTaker(false);
     setSelectedAssessment(null);
     setSelectedCandidate('');

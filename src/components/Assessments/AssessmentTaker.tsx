@@ -6,7 +6,7 @@ import {
   submitAssessmentResponse,
   updateCurrentResponse 
 } from '../../store/slices/assessmentResponsesSlice';
-import type { Assessment, AssessmentQuestion, AssessmentResponse } from '../../types';
+import type { Assessment, AssessmentQuestion, AssessmentResponse, QuestionResponseValue } from '../../types';
 import './AssessmentTaker.css';
 
 interface AssessmentTakerProps {
@@ -26,7 +26,7 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
   const { loading } = useAppSelector((state) => state.assessmentResponses);
   
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
-  const [responses, setResponses] = useState<Record<string, any>>({});
+  const [responses, setResponses] = useState<Record<string, QuestionResponseValue>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
@@ -82,7 +82,7 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
     }
   }, [responses, dispatch, assessment.id, candidateId]);
 
-  const handleResponseChange = (questionId: string, value: any) => {
+  const handleResponseChange = (questionId: string, value: QuestionResponseValue) => {
     setResponses(prev => ({
       ...prev,
       [questionId]: value
@@ -148,7 +148,7 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
           </div>
         );
 
-      case 'multi-choice':
+      case 'multi-choice': {
         const selectedValues = Array.isArray(value) ? value : [];
         return (
           <div className="question-options">
@@ -171,23 +171,27 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
             ))}
           </div>
         );
+      }
 
-      case 'short-text':
+      case 'short-text': {
+        const textValue = typeof value === 'string' ? value : '';
         return (
           <input
             type="text"
-            value={value}
+            value={textValue}
             onChange={(e) => handleResponseChange(question.id, e.target.value)}
             maxLength={question.maxLength}
             className="text-input"
             placeholder="Enter your answer..."
           />
         );
+      }
 
-      case 'long-text':
+      case 'long-text': {
+        const textValue = typeof value === 'string' ? value : '';
         return (
           <textarea
-            value={value}
+            value={textValue}
             onChange={(e) => handleResponseChange(question.id, e.target.value)}
             maxLength={question.maxLength}
             rows={4}
@@ -195,12 +199,14 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
             placeholder="Enter your detailed answer..."
           />
         );
+      }
 
-      case 'numeric':
+      case 'numeric': {
+        const numValue = typeof value === 'number' ? value : typeof value === 'string' ? value : '';
         return (
           <input
             type="number"
-            value={value}
+            value={numValue}
             onChange={(e) => handleResponseChange(question.id, e.target.value)}
             min={question.min}
             max={question.max}
@@ -208,6 +214,7 @@ const AssessmentTaker: React.FC<AssessmentTakerProps> = ({
             placeholder="Enter a number..."
           />
         );
+      }
 
       case 'file-upload':
         return (

@@ -56,7 +56,7 @@ const MentionDisplay: React.FC<MentionDisplayProps> = ({
     // Remaining text (without structured tokens) may contain simple mentions
     // Only process simple mentions if they're NOT part of a structured token
     const remaining = text.substring(lastIndex);
-    const simpleRegex = /@([A-Za-z][A-Za-z\s\-&\.]*[A-Za-z]|[A-Za-z])/g;
+    const simpleRegex = /@([A-Za-z][A-Za-z\s\-&.]*[A-Za-z]|[A-Za-z])/g;
     let simpleLast = 0;
     
     // Reset regex for remaining text

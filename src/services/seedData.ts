@@ -236,5 +236,25 @@ export const forceSeedDatabase = async () => {
   }
 };
 
-// Call this function when the app starts
-forceSeedDatabase();
+// Utility: Normalize candidate jobIds to existing jobs (assign random valid job when missing)
+export const normalizeCandidateJobs = async () => {
+  const jobs = await db.jobs.toArray();
+  const jobIds = new Set(jobs.map(j => j.id));
+  if (jobs.length === 0) return; // nothing to normalize
+
+  const candidates = await db.candidates.toArray();
+  const updates: Candidate[] = [];
+  for (const c of candidates) {
+    if (!jobIds.has(c.jobId)) {
+      const randomJob = jobs[Math.floor(Math.random() * jobs.length)];
+      updates.push({ ...c, jobId: randomJob.id, updatedAt: new Date().toISOString() });
+    }
+  }
+  if (updates.length > 0) {
+    await db.candidates.bulkPut(updates);
+    console.log(`Normalized ${updates.length} candidates with invalid job assignments`);
+  }
+};
+
+// Call seed and normalization on app start
+forceSeedDatabase().then(() => normalizeCandidateJobs());

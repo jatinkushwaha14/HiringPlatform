@@ -1,6 +1,6 @@
 import { http, HttpResponse, delay } from 'msw';
 import { db } from '../services/database';
-import type { Job, Candidate, Assessment, AssessmentResponse } from '../types';
+import type { Job, Candidate, Assessment, AssessmentResponse, QuestionResponseValue } from '../types';
 
 function randomLatency() {
   return 200 + Math.floor(Math.random() * 1000); // 200–1200ms
@@ -265,7 +265,7 @@ export const handlers = [
       id: crypto.randomUUID(),
       assessmentId: body.assessmentId,
       candidateId: body.candidateId,
-      responses: body.responses as Record<string, unknown>,
+      responses: body.responses as Record<string, QuestionResponseValue>,
       submittedAt: new Date().toISOString(),
     };
     await db.assessmentResponses.put(response as AssessmentResponse);

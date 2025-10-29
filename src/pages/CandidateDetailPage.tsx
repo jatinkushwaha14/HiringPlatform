@@ -180,8 +180,10 @@ const CandidateDetailPage: React.FC = () => {
                     <Link to={`/jobs/${job.id}`} className="job-link">
                       {job.title}
                     </Link>
+                  ) : jobs.length === 0 ? (
+                    'Loading…'
                   ) : (
-                    'Unknown Job'
+                    'Not Listed'
                   )}
                 </span>
               </div>

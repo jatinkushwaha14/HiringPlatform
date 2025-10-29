@@ -79,7 +79,7 @@ const MentionInput: React.FC<MentionInputProps> = ({
 
     // Check for @mentions with improved regex
     const textBeforeCursor = newValue.substring(0, cursorPos);
-    const mentionMatch = textBeforeCursor.match(/@([A-Za-z][A-Za-z\s\-&\.]*[A-Za-z]|[A-Za-z])$/);
+    const mentionMatch = textBeforeCursor.match(/@([A-Za-z][A-Za-z\s\-&.]*[A-Za-z]|[A-Za-z])$/);
     
     if (mentionMatch) {
       const query = mentionMatch[1];

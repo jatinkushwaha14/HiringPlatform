@@ -154,6 +154,7 @@
 
 .question-header {
   display: flex;
+  color: black;
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 12px;

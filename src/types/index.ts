@@ -52,10 +52,12 @@ export interface AssessmentQuestion {
   };
 }
 
+export type QuestionResponseValue = string | string[] | number;
+
 export interface AssessmentResponse {
   id: string;
   assessmentId: string;
   candidateId: string;
-  responses: Record<string, any>;
+  responses: Record<string, QuestionResponseValue>;
   submittedAt: string;
 }

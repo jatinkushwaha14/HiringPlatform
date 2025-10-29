@@ -64,7 +64,7 @@ const candidatesSlice = createSlice({
       .addCase(updateCandidateStage.fulfilled, (state, action) => {
         const candidate = state.candidates.find(c => c.id === action.payload.id);
         if (candidate) {
-          candidate.stage = action.payload.stage as any;
+          candidate.stage = action.payload.stage;
           candidate.updatedAt = new Date().toISOString();
         }
       });

@@ -1,4 +1,6 @@
 // API service for HTTP requests (simulated with MSW)
+import type { Job, Candidate, Assessment, AssessmentResponse, QuestionResponseValue } from '../types';
+
 const API_BASE_URL = '/api';
 
 export interface ApiResponse<T> {
@@ -60,7 +62,7 @@ export const jobsApi = {
     pageSize?: number;
     sort?: string;
     tags?: string[];
-  } = {}): Promise<ApiResponse<{ items: any[]; total: number; page: number; pageSize: number }>> {
+  } = {}): Promise<ApiResponse<{ items: Job[]; total: number; page: number; pageSize: number }>> {
     const q = new URLSearchParams();
     if (params.search) q.set('search', params.search);
     if (params.status) q.set('status', params.status);
@@ -72,21 +74,21 @@ export const jobsApi = {
     return apiRequest(`/jobs${query}`);
   },
 
-  async create(job: any): Promise<ApiResponse<any>> {
+  async create(job: Omit<Job, 'id' | 'createdAt' | 'updatedAt'>): Promise<ApiResponse<Job>> {
     return apiRequest('/jobs', {
       method: 'POST',
       body: JSON.stringify(job),
     });
   },
 
-  async update(id: string, updates: any): Promise<ApiResponse<any>> {
+  async update(id: string, updates: Partial<Job>): Promise<ApiResponse<Job>> {
     return apiRequest(`/jobs/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(updates),
     });
   },
 
-  async reorder(id: string, payload: { fromOrder: number; toOrder: number }): Promise<ApiResponse<any>> {
+  async reorder(id: string, payload: { fromOrder: number; toOrder: number }): Promise<ApiResponse<Job[]>> {
     return apiRequest(`/jobs/${id}/reorder`, {
       method: 'PATCH',
       body: JSON.stringify(payload),
@@ -102,7 +104,7 @@ export const jobsApi = {
 
 // Candidates API
 export const candidatesApi = {
-  async list(params: { search?: string; stage?: string; page?: number; pageSize?: number } = {}): Promise<ApiResponse<{ items: any[]; total: number; page: number; pageSize: number }>> {
+  async list(params: { search?: string; stage?: string; page?: number; pageSize?: number } = {}): Promise<ApiResponse<{ items: Candidate[]; total: number; page: number; pageSize: number }>> {
     const q = new URLSearchParams();
     if (params.search) q.set('search', params.search);
     if (params.stage) q.set('stage', params.stage);
@@ -112,30 +114,30 @@ export const candidatesApi = {
     return apiRequest(`/candidates${query}`);
   },
 
-  async updateStage(id: string, stage: string): Promise<ApiResponse<any>> {
+  async updateStage(id: string, stage: string): Promise<ApiResponse<{ id: string; stage: string }>> {
     return apiRequest(`/candidates/${id}/stage`, { method: 'PUT', body: JSON.stringify({ stage }) });
   },
 
-  async getTimeline(id: string): Promise<ApiResponse<any[]>> {
+  async getTimeline(id: string): Promise<ApiResponse<Array<{ type: string; at: string; stage?: string }>>> {
     return apiRequest(`/candidates/${id}/timeline`);
   },
 };
 
 // Assessments API
 export const assessmentsApi = {
-  async list(jobId?: string): Promise<ApiResponse<any[]>> {
+  async list(jobId?: string): Promise<ApiResponse<Assessment[]>> {
     const query = jobId ? `?jobId=${encodeURIComponent(jobId)}` : '';
     return apiRequest(`/assessments${query}`);
   },
 
-  async create(assessment: any): Promise<ApiResponse<any>> {
+  async create(assessment: Omit<Assessment, 'id' | 'createdAt' | 'updatedAt'>): Promise<ApiResponse<Assessment>> {
     return apiRequest('/assessments', {
       method: 'POST',
       body: JSON.stringify(assessment),
     });
   },
 
-  async update(id: string, assessment: any): Promise<ApiResponse<any>> {
+  async update(id: string, assessment: Partial<Assessment>): Promise<ApiResponse<Assessment>> {
     return apiRequest(`/assessments/${id}`, {
       method: 'PUT',
       body: JSON.stringify(assessment),
@@ -148,7 +150,7 @@ export const assessmentsApi = {
     });
   },
 
-  async submitResponse(jobId: string, payload: { assessmentId: string; candidateId: string; responses: Record<string, any> }): Promise<ApiResponse<any>> {
+  async submitResponse(jobId: string, payload: { assessmentId: string; candidateId: string; responses: Record<string, QuestionResponseValue> }): Promise<ApiResponse<AssessmentResponse>> {
     return apiRequest(`/assessments/${jobId}/submit`, { method: 'POST', body: JSON.stringify(payload) });
   },
 };

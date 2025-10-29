@@ -136,9 +136,10 @@ const JobsPage: React.FC = () => {
   const paginatedJobs = filteredJobs; // already paginated by API
 
   // Reset to first page when filters change
+  const selectedTagsString = selectedTags.join(',');
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [search, statusFilter, selectedTags.join(',')]);
+  }, [search, statusFilter, selectedTagsString]);
 
   const handleCreateJob = () => {
     setEditingJob(undefined);

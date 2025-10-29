@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import type { AssessmentResponse } from '../../types';
+import type { AssessmentResponse, QuestionResponseValue } from '../../types';
 import { db } from '../../services/database';
 import { assessmentsApi } from '../../services/api';
 
@@ -64,7 +64,7 @@ export const saveAssessmentResponse = createAsyncThunk(
   }: { 
     assessmentId: string; 
     candidateId: string; 
-    responses: Record<string, any>; 
+    responses: Record<string, QuestionResponseValue>; 
     isDraft?: boolean;
   }) => {
     // Check if response already exists
@@ -96,7 +96,7 @@ export const submitAssessmentResponse = createAsyncThunk(
   }: { 
     assessmentId: string; 
     candidateId: string; 
-    responses: Record<string, any>; 
+    responses: Record<string, QuestionResponseValue>; 
   }) => {
     // Need jobId to submit to /assessments/:jobId/submit. Look up assessment.
     const assessment = await db.assessments.get(assessmentId);

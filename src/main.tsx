@@ -5,8 +5,7 @@ import App from './App.tsx'
 import './services/seedData'
 
 async function start() {
-  // Ensure MSW runs in dev and preview builds so API calls return JSON
-  if (import.meta.env.DEV || import.meta.env.MODE === 'development') {
+  // Ensure MSW runs in all environments (dev, preview, prod) to serve mock APIs
     try {
       // Unregister any existing service workers first to avoid conflicts
       if ('serviceWorker' in navigator) {
@@ -27,12 +26,15 @@ async function start() {
       }
 
       const { worker } = await import('./mocks/browser');
+      const base = (import.meta as { env?: Record<string, string> }).env?.BASE_URL || '/';
+      const swUrl = `${base.replace(/\/$/, '/') }mockServiceWorker.js`;
+      const scope = base || '/';
       await worker.start({
         onUnhandledRequest: 'bypass',
         serviceWorker: { 
-          url: '/mockServiceWorker.js',
+          url: swUrl,
           options: {
-            scope: '/',
+            scope,
           },
         },
       });
@@ -47,7 +49,6 @@ async function start() {
       console.error('Try clearing your browser cache and hard refreshing (Ctrl+Shift+R or Cmd+Shift+R)');
       // If MSW is not available, continue anyway
     }
-  }
 
   createRoot(document.getElementById('root')!).render(
     <StrictMode>

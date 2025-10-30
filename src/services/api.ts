@@ -1,7 +1,8 @@
 // API service for HTTP requests (simulated with MSW)
 import type { Job, Candidate, Assessment, AssessmentResponse, QuestionResponseValue } from '../types';
 
-const API_BASE_URL = '/api';
+const BASE = (import.meta as { env?: Record<string, string> }).env?.BASE_URL || '/';
+const API_BASE_URL = `${BASE.replace(/\/$/, '/') }api`;
 
 export interface ApiResponse<T> {
   success: boolean;

@@ -1,6 +1,8 @@
 import { http, HttpResponse, delay } from 'msw';
 import { db } from '../services/database';
 import type { Job, Candidate, Assessment, AssessmentResponse, QuestionResponseValue } from '../types';
+const BASE = (import.meta as { env?: Record<string, string> }).env?.BASE_URL || '/';
+const API = (path: string) => `${BASE.replace(/\/$/, '/') }api${path}`;
 
 function randomLatency() {
   return 200 + Math.floor(Math.random() * 1000); // 200–1200ms
@@ -17,7 +19,7 @@ function maybeFailWrite() {
 // Mock API endpoints for TalentFlow
 export const handlers = [
   // Jobs API
-  http.get('/api/jobs', async ({ request }) => {
+  http.get(API('/jobs'), async ({ request }) => {
     await delay(randomLatency());
 
     const url = new URL(request.url);
@@ -68,7 +70,7 @@ export const handlers = [
     });
   }),
 
-  http.post('/api/jobs', async ({ request }) => {
+  http.post(API('/jobs'), async ({ request }) => {
     await delay(randomLatency());
     if (maybeFailWrite()) {
       return HttpResponse.json({ success: false, message: 'Random write failure' }, { status: 500 });
@@ -96,7 +98,7 @@ export const handlers = [
     });
   }),
 
-  http.patch('/api/jobs/:id', async ({ request, params }) => {
+  http.patch(API('/jobs/:id'), async ({ request, params }) => {
     await delay(randomLatency());
     if (maybeFailWrite()) {
       return HttpResponse.json({ success: false, message: 'Random write failure' }, { status: 500 });
@@ -125,7 +127,7 @@ export const handlers = [
   }),
 
   // Reorder endpoint accepts fromOrder and toOrder, and updates order across affected jobs
-  http.patch('/api/jobs/:id/reorder', async ({ request }) => {
+  http.patch(API('/jobs/:id/reorder'), async ({ request }) => {
     await delay(randomLatency());
     // Higher failure chance to test rollback
     if (maybeFailWrite()) {
@@ -161,7 +163,7 @@ export const handlers = [
   }),
 
   // Candidates API
-  http.get('/api/candidates', async ({ request }) => {
+  http.get(API('/candidates'), async ({ request }) => {
     await delay(randomLatency());
     const url = new URL(request.url);
     const search = (url.searchParams.get('search') || '').toLowerCase();
@@ -187,7 +189,7 @@ export const handlers = [
     return HttpResponse.json({ success: true, data: { items: paged, total, page, pageSize }, message: 'Candidates fetched successfully' });
   }),
 
-  http.put('/api/candidates/:id/stage', async ({ request, params }) => {
+  http.put(API('/candidates/:id/stage'), async ({ request, params }) => {
     await delay(randomLatency());
     if (maybeFailWrite()) {
       return HttpResponse.json({ success: false, message: 'Random write failure' }, { status: 500 });
@@ -206,7 +208,7 @@ export const handlers = [
   }),
 
   // Candidate timeline API (frontend-only via localStorage)
-  http.get('/api/candidates/:id/timeline', async ({ params }) => {
+  http.get(API('/candidates/:id/timeline'), async ({ params }) => {
     await delay(randomLatency());
     const id = params.id as string;
     const timelineKey = `timeline:${id}`;
@@ -216,7 +218,7 @@ export const handlers = [
   }),
 
   // Assessments API
-  http.get('/api/assessments', async ({ request }) => {
+  http.get(API('/assessments'), async ({ request }) => {
     await delay(randomLatency());
     const url = new URL(request.url);
     const jobId = url.searchParams.get('jobId');
@@ -226,7 +228,7 @@ export const handlers = [
     return HttpResponse.json({ success: true, data: items, message: 'Assessments fetched successfully' });
   }),
 
-  http.post('/api/assessments', async ({ request }) => {
+  http.post(API('/assessments'), async ({ request }) => {
     await delay(randomLatency());
     if (maybeFailWrite()) return HttpResponse.json({ success: false, message: 'Random write failure' }, { status: 500 });
     const body = await request.json();
@@ -236,7 +238,7 @@ export const handlers = [
     return HttpResponse.json({ success: true, data: assessment, message: 'Assessment created successfully' });
   }),
 
-  http.put('/api/assessments/:id', async ({ request, params }) => {
+  http.put(API('/assessments/:id'), async ({ request, params }) => {
     await delay(randomLatency());
     if (maybeFailWrite()) return HttpResponse.json({ success: false, message: 'Random write failure' }, { status: 500 });
     const body = await request.json();
@@ -248,7 +250,7 @@ export const handlers = [
     return HttpResponse.json({ success: true, data: saved, message: 'Assessment updated successfully' });
   }),
 
-  http.delete('/api/assessments/:id', async ({ params }) => {
+  http.delete(API('/assessments/:id'), async ({ params }) => {
     await delay(randomLatency());
     if (maybeFailWrite()) return HttpResponse.json({ success: false, message: 'Random write failure' }, { status: 500 });
     const id = params.id as string;
@@ -257,7 +259,7 @@ export const handlers = [
   }),
 
   // Assessment Responses API (submit via jobId as per spec)
-  http.post('/api/assessments/:jobId/submit', async ({ request }) => {
+  http.post(API('/assessments/:jobId/submit'), async ({ request }) => {
     await delay(randomLatency());
     if (maybeFailWrite()) return HttpResponse.json({ success: false, message: 'Random write failure' }, { status: 500 });
     const body = (await request.json()) as { assessmentId: string; candidateId: string; responses: Record<string, unknown> };
@@ -273,7 +275,7 @@ export const handlers = [
   }),
 
   // Error simulation (10% chance)
-  http.get('/api/*', () => {
+  http.get(API('/*'), () => {
     if (Math.random() < 0.1) {
       return HttpResponse.json({
         success: false,
